@@ -27,6 +27,9 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
     <div className="min-h-screen bg-gradient-to-br from-orange-500 via-pink-500 to-purple-500 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full">
         <div className="mb-6">
+          <p className="text-sm text-gray-700 mb-1 font-medium">
+            Round {gameState.currentRound} of {gameState.totalRounds}
+          </p>
           <p className="text-sm text-gray-700 mb-2 font-medium">
             Turn {turnNumber} of {gameState.players.length}
           </p>

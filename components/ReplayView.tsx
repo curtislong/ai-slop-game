@@ -5,8 +5,11 @@ import { useGame } from '@/context/GameContext';
 import Image from 'next/image';
 
 export default function ReplayView() {
-  const { gameState, resetGame } = useGame();
+  const { gameState, resetGame, startNextRound } = useGame();
   const [currentStep, setCurrentStep] = useState(0);
+
+  const isLastRound = gameState.currentRound >= gameState.totalRounds;
+  const hasMoreRounds = !isLastRound;
 
   if (gameState.turns.length === 0) return null;
 
@@ -152,13 +155,40 @@ export default function ReplayView() {
           </div>
         </div>
 
-        {/* Reset button */}
-        <button
-          onClick={resetGame}
-          className="w-full py-4 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-xl font-black text-lg hover:from-green-700 hover:to-blue-700 transition-all transform hover:scale-105"
-        >
-          PLAY AGAIN
-        </button>
+        {/* Round info */}
+        <div className="mb-4 text-center">
+          <p className="text-sm text-gray-700 font-medium">
+            Round {gameState.currentRound} of {gameState.totalRounds} complete
+          </p>
+        </div>
+
+        {/* Action buttons */}
+        {hasMoreRounds ? (
+          <div className="flex gap-4">
+            <button
+              onClick={resetGame}
+              className="flex-1 py-4 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-all"
+            >
+              Quit Game
+            </button>
+            <button
+              onClick={() => {
+                setCurrentStep(0);
+                startNextRound();
+              }}
+              className="flex-1 py-4 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-xl font-black text-lg hover:from-green-700 hover:to-blue-700 transition-all transform hover:scale-105"
+            >
+              NEXT ROUND →
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={resetGame}
+            className="w-full py-4 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-xl font-black text-lg hover:from-green-700 hover:to-blue-700 transition-all transform hover:scale-105"
+          >
+            PLAY AGAIN
+          </button>
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { GameState, Player, Turn, GameSettings } from '@/types/game';
+import { GameState, Player, Turn, GameSettings, Round } from '@/types/game';
 import { getRandomCard } from '@/lib/cards';
 import { createPlayer, advanceTurn } from '@/lib/gameLogic';
 
@@ -12,6 +12,8 @@ interface GameContextType {
   startGame: () => void;
   submitTurn: (prompt: string, imageUrl: string) => void;
   resetGame: () => void;
+  updateSettings: (settings: Partial<GameSettings>) => void;
+  startNextRound: () => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -20,6 +22,7 @@ const initialSettings: GameSettings = {
   turnTimerEnabled: false,
   turnTimerSeconds: 60,
   maxPlayers: 10,
+  numberOfRounds: 1,
 };
 
 const createInitialState = (): GameState => ({
@@ -30,6 +33,9 @@ const createInitialState = (): GameState => ({
   turns: [],
   madLibCard: null,
   settings: initialSettings,
+  currentRound: 1,
+  totalRounds: 1,
+  completedRounds: [],
 });
 
 export function GameProvider({ children }: { children: ReactNode }) {
@@ -53,6 +59,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const updateSettings = (settings: Partial<GameSettings>) => {
+    setGameState({
+      ...gameState,
+      settings: { ...gameState.settings, ...settings },
+      totalRounds: settings.numberOfRounds ?? gameState.totalRounds,
+    });
+  };
+
   const startGame = () => {
     if (gameState.players.length < 2) return;
 
@@ -61,6 +75,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       ...gameState,
       status: 'playing',
       madLibCard: card,
+      totalRounds: gameState.settings.numberOfRounds,
+      currentRound: 1,
     });
   };
 
@@ -81,6 +97,32 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setGameState(newState);
   };
 
+  const startNextRound = () => {
+    if (gameState.currentRound >= gameState.totalRounds) {
+      // Game is completely over
+      return;
+    }
+
+    // Save completed round
+    const completedRound: Round = {
+      roundNumber: gameState.currentRound,
+      turns: gameState.turns,
+      madLibCard: gameState.madLibCard!,
+    };
+
+    // Start new round
+    const newCard = getRandomCard();
+    setGameState({
+      ...gameState,
+      status: 'playing',
+      currentRound: gameState.currentRound + 1,
+      currentTurnIndex: 0,
+      turns: [],
+      madLibCard: newCard,
+      completedRounds: [...gameState.completedRounds, completedRound],
+    });
+  };
+
   const resetGame = () => {
     setGameState(createInitialState());
   };
@@ -94,6 +136,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
         startGame,
         submitTurn,
         resetGame,
+        updateSettings,
+        startNextRound,
       }}
     >
       {children}

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useGame } from '@/context/GameContext';
 
 export default function GameSetup() {
-  const { gameState, addPlayer, removePlayer, startGame } = useGame();
+  const { gameState, addPlayer, removePlayer, startGame, updateSettings } = useGame();
   const [playerName, setPlayerName] = useState('');
 
   const handleAddPlayer = (e: React.FormEvent) => {
@@ -13,6 +13,10 @@ export default function GameSetup() {
       addPlayer(playerName.trim());
       setPlayerName('');
     }
+  };
+
+  const handleRoundsChange = (rounds: number) => {
+    updateSettings({ numberOfRounds: rounds });
   };
 
   const canStart = gameState.players.length >= 2;
@@ -24,6 +28,28 @@ export default function GameSetup() {
           AI SLOP
         </h1>
         <p className="text-center text-gray-600 mb-8">The Game!</p>
+
+        {/* Round selector */}
+        <div className="mb-6">
+          <label className="block text-sm font-bold text-gray-900 mb-2">
+            Number of Rounds
+          </label>
+          <div className="flex gap-2">
+            {[1, 2, 3, 4, 5].map((num) => (
+              <button
+                key={num}
+                onClick={() => handleRoundsChange(num)}
+                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
+                  gameState.settings.numberOfRounds === num
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="mb-6">
           <h2 className="text-xl font-bold mb-4 text-gray-900">Players ({gameState.players.length})</h2>

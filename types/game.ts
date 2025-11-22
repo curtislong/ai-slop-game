@@ -23,18 +23,29 @@ export interface Turn {
 
 export type GameStatus = 'setup' | 'playing' | 'replay';
 
+export interface Round {
+  roundNumber: number;
+  turns: Turn[];
+  madLibCard: MadLibCard;
+}
+
 export interface GameState {
   id: string;
   status: GameStatus;
   players: Player[];
   currentTurnIndex: number;
-  turns: Turn[];
+  turns: Turn[]; // Current round turns
   madLibCard: MadLibCard | null;
   settings: GameSettings;
+  // Round tracking
+  currentRound: number;
+  totalRounds: number;
+  completedRounds: Round[];
 }
 
 export interface GameSettings {
   turnTimerEnabled: boolean;
   turnTimerSeconds: number;
   maxPlayers: number;
+  numberOfRounds: number;
 }
