@@ -48,4 +48,5 @@ export interface GameSettings {
   turnTimerSeconds: number;
   maxPlayers: number;
   numberOfRounds: number;
+  gameMode: string; // ID of the selected game mode
 }

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useGame } from '@/context/GameContext';
 import Image from 'next/image';
+import { calculateWordLimit, countWords, getGameMode } from '@/lib/gameModes';
 
 interface GuessTurnProps {
   previousImage: string;
@@ -17,8 +18,15 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
   const currentPlayer = gameState.players[gameState.currentTurnIndex];
   const turnNumber = gameState.currentTurnIndex + 1;
 
+  // Calculate word limit based on the original mad lib prompt
+  const originalPrompt = gameState.turns[0]?.prompt || '';
+  const wordLimit = calculateWordLimit(originalPrompt, gameState.settings.gameMode);
+  const currentWordCount = countWords(guess);
+  const isOverLimit = wordLimit !== Infinity && currentWordCount > wordLimit;
+  const gameMode = getGameMode(gameState.settings.gameMode);
+
   const handleSubmit = () => {
-    if (guess.trim()) {
+    if (guess.trim() && !isOverLimit) {
       onSubmit(guess.trim());
     }
   };
@@ -51,29 +59,48 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-bold text-gray-900 mb-2">
-            Describe what you see:
-          </label>
+          <div className="flex justify-between items-center mb-2">
+            <label className="block text-sm font-bold text-gray-900">
+              Describe what you see:
+            </label>
+            <span className="text-xs text-gray-600 font-medium">
+              {gameMode.name} Mode
+            </span>
+          </div>
           <textarea
             value={guess}
             onChange={(e) => setGuess(e.target.value)}
             placeholder="A bewildered cat trying to negotiate with..."
-            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-pink-500 focus:outline-none resize-none text-gray-900"
+            className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none resize-none text-gray-900 ${
+              isOverLimit
+                ? 'border-red-500 focus:border-red-600'
+                : 'border-gray-300 focus:border-pink-500'
+            }`}
             rows={4}
             disabled={isGenerating}
-            maxLength={500}
           />
-          <p className="text-xs text-gray-700 mt-1 text-right font-medium">
-            {guess.length}/500
-          </p>
+          <div className="flex justify-between items-center mt-1">
+            <p className={`text-xs font-medium ${
+              isOverLimit ? 'text-red-600' : 'text-gray-700'
+            }`}>
+              {wordLimit === Infinity
+                ? `${currentWordCount} words (no limit)`
+                : `${currentWordCount}/${wordLimit} words`}
+            </p>
+            {isOverLimit && (
+              <p className="text-xs text-red-600 font-bold">
+                Over limit by {currentWordCount - wordLimit}!
+              </p>
+            )}
+          </div>
         </div>
 
         <button
           onClick={handleSubmit}
-          disabled={!guess.trim() || isGenerating}
+          disabled={!guess.trim() || isGenerating || isOverLimit}
           className="w-full py-4 bg-gradient-to-r from-pink-600 to-orange-600 text-white rounded-xl font-black text-lg hover:from-pink-700 hover:to-orange-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all transform hover:scale-105"
         >
-          {isGenerating ? 'GENERATING IMAGE...' : 'GENERATE IMAGE'}
+          {isGenerating ? 'GENERATING IMAGE...' : isOverLimit ? 'TOO MANY WORDS!' : 'GENERATE IMAGE'}
         </button>
       </div>
     </div>

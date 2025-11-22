@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useGame } from '@/context/GameContext';
+import { GAME_MODES } from '@/lib/gameModes';
 
 export default function GameSetup() {
   const { gameState, addPlayer, removePlayer, startGame, updateSettings } = useGame();
@@ -19,7 +20,12 @@ export default function GameSetup() {
     updateSettings({ numberOfRounds: rounds });
   };
 
+  const handleGameModeChange = (modeId: string) => {
+    updateSettings({ gameMode: modeId });
+  };
+
   const canStart = gameState.players.length >= 2;
+  const gameModesList = Object.values(GAME_MODES);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center p-4">
@@ -28,6 +34,35 @@ export default function GameSetup() {
           AI SLOP
         </h1>
         <p className="text-center text-gray-600 mb-8">The Game!</p>
+
+        {/* Game mode selector */}
+        <div className="mb-6">
+          <label className="block text-sm font-bold text-gray-900 mb-2">
+            Game Mode
+          </label>
+          <div className="space-y-2">
+            {gameModesList.map((mode) => (
+              <button
+                key={mode.id}
+                onClick={() => handleGameModeChange(mode.id)}
+                className={`w-full text-left p-3 rounded-lg transition-all ${
+                  gameState.settings.gameMode === mode.id
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                }`}
+              >
+                <div className="font-bold">{mode.name}</div>
+                <div className={`text-xs ${
+                  gameState.settings.gameMode === mode.id
+                    ? 'text-purple-100'
+                    : 'text-gray-600'
+                }`}>
+                  {mode.description}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Round selector */}
         <div className="mb-6">

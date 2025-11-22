@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { GameState, Player, Turn, GameSettings, Round } from '@/types/game';
 import { getRandomCard } from '@/lib/cards';
 import { createPlayer, advanceTurn } from '@/lib/gameLogic';
+import { DEFAULT_GAME_MODE } from '@/lib/gameModes';
 
 interface GameContextType {
   gameState: GameState;
@@ -23,6 +24,7 @@ const initialSettings: GameSettings = {
   turnTimerSeconds: 60,
   maxPlayers: 10,
   numberOfRounds: 1,
+  gameMode: DEFAULT_GAME_MODE,
 };
 
 const createInitialState = (): GameState => ({
