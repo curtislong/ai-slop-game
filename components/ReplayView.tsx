@@ -10,13 +10,20 @@ export default function ReplayView() {
 
   if (gameState.turns.length === 0) return null;
 
-  const totalSteps = gameState.turns.length * 2; // Each turn has prompt + image
+  // Step 0: Comparison view
+  // Steps 1+: Alternating prompt, image, prompt, image...
+  // Total steps = 1 (comparison) + (turns.length * 2)
+  const totalSteps = 1 + (gameState.turns.length * 2);
   const isAtStart = currentStep === 0;
   const isAtEnd = currentStep === totalSteps - 1;
 
   const getCurrentContent = () => {
-    const turnIndex = Math.floor(currentStep / 2);
-    const isImage = currentStep % 2 === 1;
+    if (currentStep === 0) return null; // Comparison view
+
+    // Adjust index for content steps (subtract 1 for comparison view)
+    const contentStep = currentStep - 1;
+    const turnIndex = Math.floor(contentStep / 2);
+    const isImage = contentStep % 2 === 1;
     const turn = gameState.turns[turnIndex];
 
     if (!turn) return null;
@@ -85,7 +92,7 @@ export default function ReplayView() {
           <div className="mb-8">
             <div className="text-center mb-4">
               <p className="text-sm text-gray-700 font-medium">
-                Step {currentStep} of {totalSteps - 1}
+                {content.isImage ? 'Image' : 'Prompt'} {currentStep} of {totalSteps - 1}
               </p>
               <p className="font-bold text-lg text-purple-600">
                 {content.turn.playerName}
