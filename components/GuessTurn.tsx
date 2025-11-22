@@ -65,22 +65,12 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
     <div className="min-h-screen bg-gradient-to-br from-orange-500 via-pink-500 to-purple-500 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full">
         <div className="mb-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm text-gray-700 mb-1 font-medium">
-                Round {gameState.currentRound} of {gameState.totalRounds}
-              </p>
-              <p className="text-sm text-gray-700 mb-2 font-medium">
-                Turn {turnNumber} of {gameState.players.length}
-              </p>
-            </div>
-            {gameMode.turnTimerEnabled && timeLeft !== null && (
-              <div className={`text-right ${timerColor}`}>
-                <div className="text-3xl font-black">{timeLeft}</div>
-                <div className="text-xs font-medium">seconds</div>
-              </div>
-            )}
-          </div>
+          <p className="text-sm text-gray-700 mb-1 font-medium">
+            Round {gameState.currentRound} of {gameState.totalRounds}
+          </p>
+          <p className="text-sm text-gray-700 mb-2 font-medium">
+            Turn {turnNumber} of {gameState.players.length}
+          </p>
           <h2 className="text-3xl font-black text-pink-600 mb-4">
             {currentPlayer?.name}'s Turn
           </h2>
