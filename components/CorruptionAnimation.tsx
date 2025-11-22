@@ -72,18 +72,42 @@ export default function CorruptionAnimation({
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   const getStrategyMessage = () => {
-    switch (corruptionResult.strategy) {
-      case 'synonym_chaos':
-        return 'Enhancing your vocabulary...';
-      case 'elaborator':
-        return 'Adding clarifying details...';
-      case 'truncator':
-        return 'Completing your sentence...';
-      case 'homophone_rhyme':
-        return 'Improving pronunciation...';
-      default:
-        return 'Optimizing for better results...';
-    }
+    const messages: Record<string, string[]> = {
+      synonym_chaos: [
+        'Enhancing your vocabulary...',
+        'Selecting more professional terminology...',
+        'Upgrading word choices...',
+        'Replacing with industry-standard terms...'
+      ],
+      elaborator: [
+        'Adding clarifying details...',
+        'Including important context...',
+        'Enriching the description...',
+        'Providing helpful specifics...'
+      ],
+      truncator: [
+        'Completing your sentence...',
+        'Finishing your thought...',
+        'Adding the rest for you...',
+        'Auto-completing intelligently...'
+      ],
+      homophone_rhyme: [
+        'Improving pronunciation...',
+        'Correcting phonetics...',
+        'Adjusting for clarity...',
+        'Fixing spelling variations...'
+      ],
+      gap_filler: [
+        'Maximizing descriptiveness...',
+        'Filling in missing details...',
+        'Utilizing all available words...',
+        'Adding necessary context...'
+      ]
+    };
+
+    const strategy = corruptionResult.strategy;
+    const options = messages[strategy] || messages.synonym_chaos;
+    return options[Math.floor(Math.random() * options.length)];
   };
 
   return (
@@ -97,7 +121,14 @@ export default function CorruptionAnimation({
             <h2 className="text-3xl font-black text-blue-600 mb-4">
               AI ASSISTANT
             </h2>
-            <p className="text-gray-600 font-medium">I noticed your prompt could use some improvements!</p>
+            <p className="text-gray-600 font-medium">
+              {[
+                'I noticed your prompt could use some improvements!',
+                'Let me help optimize your description!',
+                'I can make this even better!',
+                'Detecting areas for enhancement...'
+              ][Math.floor(Math.random() * 4)]}
+            </p>
           </div>
         )}
 
@@ -128,11 +159,25 @@ export default function CorruptionAnimation({
         {stage === 'showing_corrupted' && (
           <div className="text-center w-full">
             <div className="text-4xl mb-4">✅</div>
-            <h3 className="text-xl font-bold text-green-600 mb-4">All improved!</h3>
+            <h3 className="text-xl font-bold text-green-600 mb-4">
+              {[
+                'All improved!',
+                'Optimization complete!',
+                'Enhanced successfully!',
+                'Much better now!'
+              ][Math.floor(Math.random() * 4)]}
+            </h3>
             <div className="bg-green-50 border-2 border-green-300 rounded-xl p-6">
               <p className="text-lg text-gray-900 font-medium">{corruptionResult.corrupted}</p>
             </div>
-            <p className="text-sm text-gray-600 mt-4 italic">Generating image from enhanced prompt...</p>
+            <p className="text-sm text-gray-600 mt-4 italic">
+              {[
+                'Generating image from enhanced prompt...',
+                'Processing optimized description...',
+                'Creating image with improvements...',
+                'Rendering refined prompt...'
+              ][Math.floor(Math.random() * 4)]}
+            </p>
           </div>
         )}
 

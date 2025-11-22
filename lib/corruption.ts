@@ -1,6 +1,6 @@
 // AI Corruption Engine for AI Slop: The Game!
 
-export type CorruptionStrategy = 'synonym_chaos' | 'elaborator' | 'truncator' | 'homophone_rhyme';
+export type CorruptionStrategy = 'synonym_chaos' | 'elaborator' | 'truncator' | 'homophone_rhyme' | 'gap_filler';
 export type CorruptionMode = 'wholesome' | 'naughty' | 'absurd' | 'deranged';
 
 export interface CorruptionResult {
@@ -219,6 +219,56 @@ Return ONLY the modified prompt, nothing else.`;
   };
 }
 
+// Strategy: Gap Filler - Add words when prompt is shorter than limit
+async function gapFiller(prompt: string, mode: CorruptionMode, wordLimit: number): Promise<CorruptionResult> {
+  const personality = MODE_PERSONALITIES[mode];
+  const currentWordCount = countWords(prompt);
+  const wordsToAdd = wordLimit - currentWordCount;
+
+  // Only apply if there's a gap to fill
+  if (wordsToAdd <= 0) {
+    return {
+      original: prompt,
+      corrupted: prompt,
+      strategy: 'gap_filler',
+      changes: []
+    };
+  }
+
+  const systemPrompt = `${personality}
+
+The user wrote: "${prompt}"
+
+But they should have used ${wordLimit} words for maximum descriptiveness! They only used ${currentWordCount} words, leaving ${wordsToAdd} words unused.
+
+Your task: "Help" them by adding exactly ${wordsToAdd} descriptive word(s) ANYWHERE in their prompt (beginning, middle, or end) to make it "more detailed and accurate". The additions should fit your personality and subtly change the meaning.
+
+Examples of helpful additions:
+- "cat on mat" (need 2 words) → "elderly cat on burning mat"
+- "sunset over ocean" (need 1 word) → "sunset over frozen ocean"
+- "robot walking" (need 3 words) → "malfunctioning robot walking backwards menacingly"
+
+IMPORTANT: Return the FULL modified prompt with exactly ${wordLimit} total words. Add words naturally throughout the prompt.
+
+Return ONLY the modified prompt, nothing else.`;
+
+  const corrupted = await callOpenAI(systemPrompt, prompt);
+
+  const changes: CorruptionChange[] = [{
+    type: 'add',
+    originalText: prompt,
+    newText: corrupted,
+    position: 0
+  }];
+
+  return {
+    original: prompt,
+    corrupted,
+    strategy: 'gap_filler',
+    changes
+  };
+}
+
 // Main corruption function
 export async function corruptPrompt(
   prompt: string,
@@ -226,20 +276,35 @@ export async function corruptPrompt(
   mode: CorruptionMode = 'absurd',
   wordLimit?: number
 ): Promise<CorruptionResult> {
+  const currentWordCount = countWords(prompt);
+  const limit = wordLimit || currentWordCount;
+
+  // Check if we should use gap filler
+  const hasGap = limit > currentWordCount;
+
   // If no strategy specified, pick one randomly
-  const strategies: CorruptionStrategy[] = ['synonym_chaos', 'elaborator', 'truncator', 'homophone_rhyme'];
+  // If there's a gap, heavily favor gap_filler (70% chance)
+  let strategies: CorruptionStrategy[];
+  if (hasGap) {
+    strategies = ['gap_filler', 'gap_filler', 'gap_filler', 'synonym_chaos', 'homophone_rhyme'];
+  } else {
+    strategies = ['synonym_chaos', 'elaborator', 'truncator', 'homophone_rhyme'];
+  }
+
   const selectedStrategy = strategy || strategies[Math.floor(Math.random() * strategies.length)];
 
   try {
     switch (selectedStrategy) {
       case 'synonym_chaos':
-        return await synonymChaos(prompt, mode, wordLimit);
+        return await synonymChaos(prompt, mode, limit);
       case 'elaborator':
-        return await elaborator(prompt, mode, wordLimit);
+        return await elaborator(prompt, mode, limit);
       case 'truncator':
-        return await truncator(prompt, mode, wordLimit);
+        return await truncator(prompt, mode, limit);
       case 'homophone_rhyme':
-        return await homophoneRhyme(prompt, mode, wordLimit);
+        return await homophoneRhyme(prompt, mode, limit);
+      case 'gap_filler':
+        return await gapFiller(prompt, mode, limit);
       default:
         throw new Error(`Unknown strategy: ${selectedStrategy}`);
     }
