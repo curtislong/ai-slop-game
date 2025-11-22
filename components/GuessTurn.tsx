@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGame } from '@/context/GameContext';
 import Image from 'next/image';
 import { calculateWordLimit, countWords, getGameMode } from '@/lib/gameModes';
@@ -14,6 +14,7 @@ interface GuessTurnProps {
 export default function GuessTurn({ previousImage, onSubmit, isGenerating }: GuessTurnProps) {
   const { gameState } = useGame();
   const [guess, setGuess] = useState('');
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   const currentPlayer = gameState.players[gameState.currentTurnIndex];
   const turnNumber = gameState.currentTurnIndex + 1;
@@ -25,22 +26,61 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
   const isOverLimit = wordLimit !== Infinity && currentWordCount > wordLimit;
   const gameMode = getGameMode(gameState.settings.gameMode);
 
+  // Timer effect for Speed Run mode
+  useEffect(() => {
+    if (gameMode.turnTimerEnabled && !isGenerating) {
+      setTimeLeft(gameMode.turnTimerSeconds);
+
+      const interval = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev === null || prev <= 1) {
+            clearInterval(interval);
+            // Auto-submit when time runs out
+            if (guess.trim() && !isOverLimit) {
+              onSubmit(guess.trim());
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [gameMode.turnTimerEnabled, isGenerating, gameMode.turnTimerSeconds]);
+
   const handleSubmit = () => {
     if (guess.trim() && !isOverLimit) {
       onSubmit(guess.trim());
     }
   };
 
+  const timerColor =
+    timeLeft === null ? 'text-gray-700' :
+    timeLeft > 10 ? 'text-green-600' :
+    timeLeft > 5 ? 'text-orange-600' :
+    'text-red-600';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-500 via-pink-500 to-purple-500 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full">
         <div className="mb-6">
-          <p className="text-sm text-gray-700 mb-1 font-medium">
-            Round {gameState.currentRound} of {gameState.totalRounds}
-          </p>
-          <p className="text-sm text-gray-700 mb-2 font-medium">
-            Turn {turnNumber} of {gameState.players.length}
-          </p>
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm text-gray-700 mb-1 font-medium">
+                Round {gameState.currentRound} of {gameState.totalRounds}
+              </p>
+              <p className="text-sm text-gray-700 mb-2 font-medium">
+                Turn {turnNumber} of {gameState.players.length}
+              </p>
+            </div>
+            {gameMode.turnTimerEnabled && timeLeft !== null && (
+              <div className={`text-right ${timerColor}`}>
+                <div className="text-3xl font-black">{timeLeft}</div>
+                <div className="text-xs font-medium">seconds</div>
+              </div>
+            )}
+          </div>
           <h2 className="text-3xl font-black text-pink-600 mb-4">
             {currentPlayer?.name}'s Turn
           </h2>
@@ -70,7 +110,7 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
           <textarea
             value={guess}
             onChange={(e) => setGuess(e.target.value)}
-            placeholder="A bewildered cat trying to negotiate with..."
+            placeholder="Describe what you see in the image..."
             className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none resize-none text-gray-900 ${
               isOverLimit
                 ? 'border-red-500 focus:border-red-600'

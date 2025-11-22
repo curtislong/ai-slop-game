@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGame } from '@/context/GameContext';
 import { parseTemplate } from '@/lib/cards';
+import { getGameMode } from '@/lib/gameModes';
 
 interface MadLibTurnProps {
   onSubmit: (prompt: string) => void;
@@ -12,11 +13,13 @@ interface MadLibTurnProps {
 export default function MadLibTurn({ onSubmit, isGenerating }: MadLibTurnProps) {
   const { gameState } = useGame();
   const [words, setWords] = useState<string[]>([]);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   if (!gameState.madLibCard) return null;
 
   const card = gameState.madLibCard;
   const currentPlayer = gameState.players[gameState.currentTurnIndex];
+  const gameMode = getGameMode(gameState.settings.gameMode);
 
   const handleWordChange = (index: number, value: string) => {
     const newWords = [...words];
@@ -31,14 +34,54 @@ export default function MadLibTurn({ onSubmit, isGenerating }: MadLibTurnProps) 
 
   const isComplete = words.length === card.blanks && words.every(w => w.trim());
 
+  // Timer effect for Speed Run mode
+  useEffect(() => {
+    if (gameMode.turnTimerEnabled && !isGenerating) {
+      setTimeLeft(gameMode.turnTimerSeconds);
+
+      const interval = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev === null || prev <= 1) {
+            clearInterval(interval);
+            // Auto-submit when time runs out if complete
+            if (isComplete) {
+              const prompt = parseTemplate(card.template, words);
+              onSubmit(prompt);
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [gameMode.turnTimerEnabled, isGenerating, gameMode.turnTimerSeconds]);
+
+  const timerColor =
+    timeLeft === null ? 'text-gray-700' :
+    timeLeft > 10 ? 'text-green-600' :
+    timeLeft > 5 ? 'text-orange-600' :
+    'text-red-600';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full">
         <div className="mb-6">
-          <p className="text-sm text-gray-700 mb-1 font-medium">
-            Round {gameState.currentRound} of {gameState.totalRounds}
-          </p>
-          <p className="text-sm text-gray-700 mb-2 font-medium">Turn 1 of {gameState.players.length}</p>
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm text-gray-700 mb-1 font-medium">
+                Round {gameState.currentRound} of {gameState.totalRounds}
+              </p>
+              <p className="text-sm text-gray-700 mb-2 font-medium">Turn 1 of {gameState.players.length}</p>
+            </div>
+            {gameMode.turnTimerEnabled && timeLeft !== null && (
+              <div className={`text-right ${timerColor}`}>
+                <div className="text-3xl font-black">{timeLeft}</div>
+                <div className="text-xs font-medium">seconds</div>
+              </div>
+            )}
+          </div>
           <h2 className="text-3xl font-black text-purple-600 mb-4">
             {currentPlayer?.name}'s Turn
           </h2>
