@@ -27,13 +27,13 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
     <div className="min-h-screen bg-gradient-to-br from-orange-500 via-pink-500 to-purple-500 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full">
         <div className="mb-6">
-          <p className="text-sm text-gray-500 mb-2">
+          <p className="text-sm text-gray-700 mb-2 font-medium">
             Turn {turnNumber} of {gameState.players.length}
           </p>
           <h2 className="text-3xl font-black text-pink-600 mb-4">
             {currentPlayer?.name}'s Turn
           </h2>
-          <p className="text-gray-600">What do you think the prompt was?</p>
+          <p className="text-gray-800 font-medium">What do you think the prompt was?</p>
         </div>
 
         <div className="mb-6 rounded-xl overflow-hidden border-4 border-gray-200">
@@ -48,19 +48,19 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-bold text-gray-700 mb-2">
+          <label className="block text-sm font-bold text-gray-900 mb-2">
             Describe what you see:
           </label>
           <textarea
             value={guess}
             onChange={(e) => setGuess(e.target.value)}
             placeholder="A bewildered cat trying to negotiate with..."
-            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-pink-500 focus:outline-none resize-none"
+            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-pink-500 focus:outline-none resize-none text-gray-900"
             rows={4}
             disabled={isGenerating}
             maxLength={500}
           />
-          <p className="text-xs text-gray-500 mt-1 text-right">
+          <p className="text-xs text-gray-700 mt-1 text-right font-medium">
             {guess.length}/500
           </p>
         </div>

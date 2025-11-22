@@ -44,7 +44,7 @@ export default function ReplayView() {
           <h2 className="text-4xl font-black text-center mb-4 bg-gradient-to-r from-green-600 to-blue-600 text-transparent bg-clip-text">
             THE SLOP JOURNEY
           </h2>
-          <p className="text-center text-gray-600">
+          <p className="text-center text-gray-800 font-medium">
             Watch how the prompt evolved...
           </p>
         </div>
@@ -52,10 +52,10 @@ export default function ReplayView() {
         {/* Comparison View */}
         {currentStep === 0 && (
           <div className="mb-8">
-            <h3 className="text-lg font-bold text-center mb-4">The Transformation</h3>
+            <h3 className="text-lg font-bold text-center mb-4 text-gray-900">The Transformation</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-500 text-center mb-2">Started here...</p>
+                <p className="text-sm text-gray-700 text-center mb-2 font-medium">Started here...</p>
                 <div className="relative w-full aspect-square bg-gray-100 rounded-lg overflow-hidden">
                   <Image
                     src={firstImage || '/placeholder.png'}
@@ -66,7 +66,7 @@ export default function ReplayView() {
                 </div>
               </div>
               <div>
-                <p className="text-sm text-gray-500 text-center mb-2">...ended here!</p>
+                <p className="text-sm text-gray-700 text-center mb-2 font-medium">...ended here!</p>
                 <div className="relative w-full aspect-square bg-gray-100 rounded-lg overflow-hidden">
                   <Image
                     src={lastImage || '/placeholder.png'}
@@ -84,7 +84,7 @@ export default function ReplayView() {
         {content && currentStep > 0 && (
           <div className="mb-8">
             <div className="text-center mb-4">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-700 font-medium">
                 Step {currentStep} of {totalSteps - 1}
               </p>
               <p className="font-bold text-lg text-purple-600">
@@ -94,7 +94,7 @@ export default function ReplayView() {
 
             {content.isImage ? (
               <div>
-                <p className="text-sm text-gray-500 text-center mb-2">
+                <p className="text-sm text-gray-700 text-center mb-2 font-medium">
                   Generated this image:
                 </p>
                 <div className="relative w-full aspect-square bg-gray-100 rounded-xl overflow-hidden border-4 border-purple-200">
@@ -108,10 +108,10 @@ export default function ReplayView() {
               </div>
             ) : (
               <div className="bg-purple-50 rounded-xl p-6 border-2 border-purple-200">
-                <p className="text-sm text-purple-600 font-bold mb-2">
+                <p className="text-sm text-purple-700 font-bold mb-2">
                   {content.turn.isMadLib ? 'Original Mad Lib:' : 'Their Guess:'}
                 </p>
-                <p className="text-lg text-gray-800">{content.turn.prompt}</p>
+                <p className="text-lg text-gray-900">{content.turn.prompt}</p>
               </div>
             )}
           </div>

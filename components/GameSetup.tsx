@@ -26,9 +26,9 @@ export default function GameSetup() {
         <p className="text-center text-gray-600 mb-8">The Game!</p>
 
         <div className="mb-6">
-          <h2 className="text-xl font-bold mb-4">Players ({gameState.players.length})</h2>
+          <h2 className="text-xl font-bold mb-4 text-gray-900">Players ({gameState.players.length})</h2>
           {gameState.players.length === 0 ? (
-            <p className="text-gray-400 text-center py-4">No players yet...</p>
+            <p className="text-gray-500 text-center py-4">No players yet...</p>
           ) : (
             <ul className="space-y-2 mb-4">
               {gameState.players.map((player) => (
@@ -36,10 +36,10 @@ export default function GameSetup() {
                   key={player.id}
                   className="flex items-center justify-between bg-gray-100 rounded-lg px-4 py-2"
                 >
-                  <span className="font-medium">{player.name}</span>
+                  <span className="font-medium text-gray-900">{player.name}</span>
                   <button
                     onClick={() => removePlayer(player.id)}
-                    className="text-red-500 hover:text-red-700 text-sm"
+                    className="text-red-600 hover:text-red-700 text-sm font-medium"
                   >
                     Remove
                   </button>
@@ -56,7 +56,7 @@ export default function GameSetup() {
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
               placeholder="Enter player name"
-              className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+              className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none text-gray-900"
               maxLength={20}
             />
             <button
@@ -67,7 +67,7 @@ export default function GameSetup() {
               Add
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-gray-700 mt-2 font-medium">
             Min: 2 players | Max: {gameState.settings.maxPlayers}
           </p>
         </form>
@@ -81,8 +81,8 @@ export default function GameSetup() {
         </button>
 
         <div className="mt-6 p-4 bg-purple-50 rounded-lg">
-          <h3 className="font-bold text-sm mb-2">How to Play:</h3>
-          <ol className="text-xs text-gray-700 space-y-1 list-decimal list-inside">
+          <h3 className="font-bold text-sm mb-2 text-gray-900">How to Play:</h3>
+          <ol className="text-xs text-gray-800 space-y-1 list-decimal list-inside">
             <li>First player fills in a mad lib prompt</li>
             <li>AI generates an image from the prompt</li>
             <li>Next player sees only the image and guesses the prompt</li>

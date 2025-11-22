@@ -35,15 +35,15 @@ export default function MadLibTurn({ onSubmit, isGenerating }: MadLibTurnProps) 
     <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full">
         <div className="mb-6">
-          <p className="text-sm text-gray-500 mb-2">Turn 1 of {gameState.players.length}</p>
+          <p className="text-sm text-gray-700 mb-2 font-medium">Turn 1 of {gameState.players.length}</p>
           <h2 className="text-3xl font-black text-purple-600 mb-4">
             {currentPlayer?.name}'s Turn
           </h2>
-          <p className="text-gray-600">Fill in the blanks to create a prompt!</p>
+          <p className="text-gray-800 font-medium">Fill in the blanks to create a prompt!</p>
         </div>
 
         <div className="bg-purple-50 rounded-xl p-6 mb-6">
-          <p className="text-lg leading-relaxed">
+          <p className="text-lg leading-relaxed text-gray-900">
             {card.template.split('___').map((part, index) => (
               <span key={index}>
                 {part}
@@ -52,7 +52,7 @@ export default function MadLibTurn({ onSubmit, isGenerating }: MadLibTurnProps) 
                     type="text"
                     value={words[index] || ''}
                     onChange={(e) => handleWordChange(index, e.target.value)}
-                    className="inline-block mx-1 px-3 py-1 border-b-2 border-purple-400 focus:border-purple-600 focus:outline-none bg-white min-w-[120px] text-center font-medium"
+                    className="inline-block mx-1 px-3 py-1 border-b-2 border-purple-400 focus:border-purple-600 focus:outline-none bg-white min-w-[120px] text-center font-medium text-gray-900"
                     placeholder="___"
                     disabled={isGenerating}
                   />
@@ -64,8 +64,8 @@ export default function MadLibTurn({ onSubmit, isGenerating }: MadLibTurnProps) 
 
         {words.length > 0 && isComplete && (
           <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4 mb-6">
-            <p className="text-sm text-green-700 font-medium mb-2">Preview:</p>
-            <p className="text-gray-800">{parseTemplate(card.template, words)}</p>
+            <p className="text-sm text-green-800 font-bold mb-2">Preview:</p>
+            <p className="text-gray-900">{parseTemplate(card.template, words)}</p>
           </div>
         )}
 
