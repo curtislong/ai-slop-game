@@ -49,6 +49,21 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
     }
   }, [gameMode.turnTimerEnabled, isGenerating, gameMode.turnTimerSeconds]);
 
+  const handleGuessChange = (newGuess: string) => {
+    // If there's a word limit, enforce it
+    if (wordLimit !== Infinity) {
+      const newWordCount = countWords(newGuess);
+      // Only allow the change if we're at or under the limit
+      if (newWordCount <= wordLimit) {
+        setGuess(newGuess);
+      }
+      // If they're trying to exceed, just ignore the input
+    } else {
+      // No limit, allow anything
+      setGuess(newGuess);
+    }
+  };
+
   const handleSubmit = () => {
     if (guess.trim() && !isOverLimit) {
       onSubmit(guess.trim());
@@ -128,11 +143,11 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
 
           <textarea
             value={guess}
-            onChange={(e) => setGuess(e.target.value)}
+            onChange={(e) => handleGuessChange(e.target.value)}
             placeholder="Describe what you see in the image..."
             className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none resize-none text-gray-900 ${
-              isOverLimit
-                ? 'border-red-500 focus:border-red-600'
+              currentWordCount === wordLimit && wordLimit !== Infinity
+                ? 'border-orange-500 focus:border-orange-600'
                 : 'border-gray-300 focus:border-pink-500'
             }`}
             rows={4}
@@ -140,15 +155,17 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
           />
           <div className="flex justify-between items-center mt-1">
             <p className={`text-xs font-medium ${
-              isOverLimit ? 'text-red-600' : 'text-gray-700'
+              currentWordCount === wordLimit && wordLimit !== Infinity
+                ? 'text-orange-600'
+                : 'text-gray-700'
             }`}>
               {wordLimit === Infinity
                 ? `${currentWordCount} words (no limit)`
                 : `${currentWordCount}/${wordLimit} words`}
             </p>
-            {isOverLimit && (
-              <p className="text-xs text-red-600 font-bold">
-                Over limit by {currentWordCount - wordLimit}!
+            {currentWordCount === wordLimit && wordLimit !== Infinity && (
+              <p className="text-xs text-orange-600 font-bold">
+                Word limit reached!
               </p>
             )}
           </div>
@@ -156,10 +173,10 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
 
         <button
           onClick={handleSubmit}
-          disabled={!guess.trim() || isGenerating || isOverLimit}
+          disabled={!guess.trim() || isGenerating}
           className="w-full py-4 bg-gradient-to-r from-pink-600 to-orange-600 text-white rounded-xl font-black text-lg hover:from-pink-700 hover:to-orange-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all transform hover:scale-105"
         >
-          {isGenerating ? 'GENERATING IMAGE...' : isOverLimit ? 'TOO MANY WORDS!' : 'GENERATE IMAGE'}
+          {isGenerating ? 'GENERATING IMAGE...' : 'GENERATE IMAGE'}
         </button>
       </div>
     </div>
