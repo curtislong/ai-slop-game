@@ -112,11 +112,11 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
           {gameMode.turnTimerEnabled && timeLeft !== null && (
             <div className="mb-3">
               <div className="flex justify-between items-center mb-1">
-                <span className={`text-sm font-bold ${timerColor}`}>
-                  {timeLeft}s remaining
+                <span className="text-xs text-gray-600 font-medium">
+                  Time Remaining
                 </span>
-                <span className="text-xs text-gray-600">
-                  {Math.round((timeLeft / gameMode.turnTimerSeconds) * 100)}%
+                <span className={`text-sm font-bold ${timerColor}`}>
+                  {timeLeft}s
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
