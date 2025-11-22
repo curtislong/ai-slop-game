@@ -64,6 +64,36 @@ export default function GameSetup() {
           </div>
         </div>
 
+        {/* Timer toggle */}
+        <div className="mb-6">
+          <label className="block text-sm font-bold text-gray-900 mb-2">
+            Timer
+          </label>
+          <button
+            onClick={() => updateSettings({
+              turnTimerEnabled: !gameState.settings.turnTimerEnabled
+            })}
+            className={`w-full text-left p-3 rounded-lg transition-all ${
+              gameState.settings.turnTimerEnabled
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+            }`}
+          >
+            <div className="font-bold">
+              {gameState.settings.turnTimerEnabled ? '20 Second Timer' : 'No Timer'}
+            </div>
+            <div className={`text-xs ${
+              gameState.settings.turnTimerEnabled
+                ? 'text-purple-100'
+                : 'text-gray-600'
+            }`}>
+              {gameState.settings.turnTimerEnabled
+                ? 'Think fast!'
+                : 'Take your time'}
+            </div>
+          </button>
+        </div>
+
         {/* Round selector */}
         <div className="mb-6">
           <label className="block text-sm font-bold text-gray-900 mb-2">

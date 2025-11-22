@@ -9,9 +9,10 @@ interface GuessTurnProps {
   previousImage: string;
   onSubmit: (prompt: string) => void;
   isGenerating: boolean;
+  turnStartTime: number | null;
 }
 
-export default function GuessTurn({ previousImage, onSubmit, isGenerating }: GuessTurnProps) {
+export default function GuessTurn({ previousImage, onSubmit, isGenerating, turnStartTime }: GuessTurnProps) {
   const { gameState } = useGame();
   const [guess, setGuess] = useState('');
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
@@ -26,10 +27,11 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
   const isOverLimit = wordLimit !== Infinity && currentWordCount > wordLimit;
   const gameMode = getGameMode(gameState.settings.gameMode);
 
-  // Timer effect for Speed Run mode
+  // Timer effect - only starts when turnStartTime is set (card flipped)
   useEffect(() => {
-    if (gameMode.turnTimerEnabled && !isGenerating) {
-      setTimeLeft(gameMode.turnTimerSeconds);
+    if (gameState.settings.turnTimerEnabled && !isGenerating && turnStartTime !== null) {
+      const timerSeconds = 20; // Fixed 20 second timer
+      setTimeLeft(timerSeconds);
 
       const interval = setInterval(() => {
         setTimeLeft((prev) => {
@@ -47,7 +49,7 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
 
       return () => clearInterval(interval);
     }
-  }, [gameMode.turnTimerEnabled, isGenerating, gameMode.turnTimerSeconds]);
+  }, [gameState.settings.turnTimerEnabled, isGenerating, turnStartTime]);
 
   const handleGuessChange = (newGuess: string) => {
     // If there's a word limit, enforce it
@@ -77,44 +79,42 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
     'text-red-600';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-500 via-pink-500 to-purple-500 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full">
-        <div className="mb-6">
-          <p className="text-sm text-gray-700 mb-1 font-medium">
-            Round {gameState.currentRound} of {gameState.totalRounds}
-          </p>
-          <p className="text-sm text-gray-700 mb-2 font-medium">
-            Turn {turnNumber} of {gameState.players.length}
-          </p>
-          <h2 className="text-3xl font-black text-pink-600 mb-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-3xl w-full min-h-[48rem] flex flex-col">
+        <div className="mb-6 flex items-start justify-between">
+          <h2 className="text-3xl font-black text-pink-600">
             {currentPlayer?.name}'s Turn
           </h2>
-          <p className="text-gray-800 font-medium">What do you think the prompt was?</p>
-        </div>
-
-        <div className="mb-6 rounded-xl overflow-hidden border-4 border-gray-200">
-          <div className="relative w-full aspect-square bg-gray-100">
-            <Image
-              src={previousImage}
-              alt="Previous generation"
-              fill
-              className="object-contain"
-            />
+          <div className="text-right">
+            <p className="text-xs text-gray-700 font-medium">
+              Round {gameState.currentRound} of {gameState.totalRounds}
+            </p>
+            <p className="text-xs text-gray-700 font-medium">
+              Turn {turnNumber} of {gameState.players.length}
+            </p>
           </div>
         </div>
 
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-bold text-gray-900">
-              Describe what you see:
-            </label>
-            <span className="text-xs text-gray-600 font-medium">
-              {gameMode.name} Mode
-            </span>
+        <div className="mb-4">
+          <div className="rounded-xl overflow-hidden border-4 border-gray-200">
+            <div className="relative w-full aspect-video bg-gray-100">
+              <Image
+                src={previousImage}
+                alt="Previous generation"
+                fill
+                className="object-contain"
+              />
+            </div>
           </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-bold text-gray-900 mb-2">
+            What do you think the prompt was?
+          </label>
 
           {/* Timer progress bar */}
-          {gameMode.turnTimerEnabled && timeLeft !== null && (
+          {gameState.settings.turnTimerEnabled && timeLeft !== null && (
             <div className="mb-3">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-xs text-gray-600 font-medium">
@@ -134,7 +134,7 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
                       : 'bg-red-500 animate-pulse'
                   }`}
                   style={{
-                    width: `${(timeLeft / gameMode.turnTimerSeconds) * 100}%`,
+                    width: `${(timeLeft / 20) * 100}%`,
                   }}
                 />
               </div>
@@ -144,13 +144,13 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
           <textarea
             value={guess}
             onChange={(e) => handleGuessChange(e.target.value)}
-            placeholder="Describe what you see in the image..."
+            placeholder="Type your guess..."
             className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none resize-none text-gray-900 ${
               currentWordCount === wordLimit && wordLimit !== Infinity
                 ? 'border-orange-500 focus:border-orange-600'
                 : 'border-gray-300 focus:border-pink-500'
             }`}
-            rows={4}
+            rows={2}
             disabled={isGenerating}
           />
           <div className="flex justify-between items-center mt-1">
@@ -171,13 +171,15 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
           </div>
         </div>
 
-        <button
-          onClick={handleSubmit}
-          disabled={!guess.trim() || isGenerating}
-          className="w-full py-4 bg-gradient-to-r from-pink-600 to-orange-600 text-white rounded-xl font-black text-lg hover:from-pink-700 hover:to-orange-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all transform hover:scale-105"
-        >
-          {isGenerating ? 'GENERATING IMAGE...' : 'GENERATE IMAGE'}
-        </button>
+        <div className="mt-auto">
+          <button
+            onClick={handleSubmit}
+            disabled={!guess.trim() || isGenerating}
+            className="w-full py-4 bg-gradient-to-r from-pink-600 to-orange-600 text-white rounded-xl font-black text-lg hover:from-pink-700 hover:to-orange-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all transform hover:scale-105"
+          >
+            {isGenerating ? 'GENERATING IMAGE...' : 'GENERATE IMAGE'}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -8,9 +8,10 @@ import { getGameMode } from '@/lib/gameModes';
 interface MadLibTurnProps {
   onSubmit: (prompt: string) => void;
   isGenerating: boolean;
+  turnStartTime: number | null;
 }
 
-export default function MadLibTurn({ onSubmit, isGenerating }: MadLibTurnProps) {
+export default function MadLibTurn({ onSubmit, isGenerating, turnStartTime }: MadLibTurnProps) {
   const { gameState } = useGame();
   const [words, setWords] = useState<string[]>([]);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
@@ -34,10 +35,11 @@ export default function MadLibTurn({ onSubmit, isGenerating }: MadLibTurnProps) 
 
   const isComplete = words.length === card.blanks && words.every(w => w.trim());
 
-  // Timer effect for Speed Run mode
+  // Timer effect - only starts when turnStartTime is set (card flipped)
   useEffect(() => {
-    if (gameMode.turnTimerEnabled && !isGenerating) {
-      setTimeLeft(gameMode.turnTimerSeconds);
+    if (gameState.settings.turnTimerEnabled && !isGenerating && turnStartTime !== null) {
+      const timerSeconds = 20; // Fixed 20 second timer
+      setTimeLeft(timerSeconds);
 
       const interval = setInterval(() => {
         setTimeLeft((prev) => {
@@ -56,7 +58,7 @@ export default function MadLibTurn({ onSubmit, isGenerating }: MadLibTurnProps) 
 
       return () => clearInterval(interval);
     }
-  }, [gameMode.turnTimerEnabled, isGenerating, gameMode.turnTimerSeconds]);
+  }, [gameState.settings.turnTimerEnabled, isGenerating, turnStartTime]);
 
   const timerColor =
     timeLeft === null ? 'text-gray-700' :
@@ -65,8 +67,8 @@ export default function MadLibTurn({ onSubmit, isGenerating }: MadLibTurnProps) 
     'text-red-600';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full">
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-3xl w-full min-h-[48rem] flex flex-col">
         <div className="mb-6">
           <p className="text-sm text-gray-700 mb-1 font-medium">
             Round {gameState.currentRound} of {gameState.totalRounds}
@@ -79,7 +81,7 @@ export default function MadLibTurn({ onSubmit, isGenerating }: MadLibTurnProps) 
         </div>
 
         {/* Timer progress bar */}
-        {gameMode.turnTimerEnabled && timeLeft !== null && (
+        {gameState.settings.turnTimerEnabled && timeLeft !== null && (
           <div className="mb-4">
             <div className="flex justify-between items-center mb-1">
               <span className="text-xs text-gray-600 font-medium">
@@ -99,7 +101,7 @@ export default function MadLibTurn({ onSubmit, isGenerating }: MadLibTurnProps) 
                     : 'bg-red-500 animate-pulse'
                 }`}
                 style={{
-                  width: `${(timeLeft / gameMode.turnTimerSeconds) * 100}%`,
+                  width: `${(timeLeft / 20) * 100}%`,
                 }}
               />
             </div>
@@ -133,13 +135,15 @@ export default function MadLibTurn({ onSubmit, isGenerating }: MadLibTurnProps) 
           </div>
         )}
 
-        <button
-          onClick={handleSubmit}
-          disabled={!isComplete || isGenerating}
-          className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-black text-lg hover:from-purple-700 hover:to-pink-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all transform hover:scale-105"
-        >
-          {isGenerating ? 'GENERATING IMAGE...' : 'GENERATE IMAGE'}
-        </button>
+        <div className="mt-auto">
+          <button
+            onClick={handleSubmit}
+            disabled={!isComplete || isGenerating}
+            className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-black text-lg hover:from-purple-700 hover:to-pink-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all transform hover:scale-105"
+          >
+            {isGenerating ? 'GENERATING IMAGE...' : 'GENERATE IMAGE'}
+          </button>
+        </div>
       </div>
     </div>
   );

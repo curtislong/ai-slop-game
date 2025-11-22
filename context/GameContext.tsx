@@ -20,8 +20,8 @@ interface GameContextType {
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 const initialSettings: GameSettings = {
-  turnTimerEnabled: false,
-  turnTimerSeconds: 60,
+  turnTimerEnabled: true,
+  turnTimerSeconds: 20,
   maxPlayers: 10,
   numberOfRounds: 1,
   gameMode: DEFAULT_GAME_MODE,

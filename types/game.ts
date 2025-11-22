@@ -27,6 +27,11 @@ export interface Round {
   roundNumber: number;
   turns: Turn[];
   madLibCard: MadLibCard;
+  score?: {
+    value: number; // 0-100
+    grade: 'gold' | 'silver' | 'bronze' | 'none';
+    message: string;
+  };
 }
 
 export interface GameState {
