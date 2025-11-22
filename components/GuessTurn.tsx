@@ -107,6 +107,35 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating }: Gue
               {gameMode.name} Mode
             </span>
           </div>
+
+          {/* Timer progress bar */}
+          {gameMode.turnTimerEnabled && timeLeft !== null && (
+            <div className="mb-3">
+              <div className="flex justify-between items-center mb-1">
+                <span className={`text-sm font-bold ${timerColor}`}>
+                  {timeLeft}s remaining
+                </span>
+                <span className="text-xs text-gray-600">
+                  {Math.round((timeLeft / gameMode.turnTimerSeconds) * 100)}%
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div
+                  className={`h-3 rounded-full transition-all duration-1000 ease-linear ${
+                    timeLeft > 10
+                      ? 'bg-green-500'
+                      : timeLeft > 5
+                      ? 'bg-orange-500'
+                      : 'bg-red-500 animate-pulse'
+                  }`}
+                  style={{
+                    width: `${(timeLeft / gameMode.turnTimerSeconds) * 100}%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           <textarea
             value={guess}
             onChange={(e) => setGuess(e.target.value)}

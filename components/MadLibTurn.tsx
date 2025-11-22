@@ -88,6 +88,34 @@ export default function MadLibTurn({ onSubmit, isGenerating }: MadLibTurnProps) 
           <p className="text-gray-800 font-medium">Fill in the blanks to create a prompt!</p>
         </div>
 
+        {/* Timer progress bar */}
+        {gameMode.turnTimerEnabled && timeLeft !== null && (
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-1">
+              <span className={`text-sm font-bold ${timerColor}`}>
+                {timeLeft}s remaining
+              </span>
+              <span className="text-xs text-gray-600">
+                {Math.round((timeLeft / gameMode.turnTimerSeconds) * 100)}%
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div
+                className={`h-3 rounded-full transition-all duration-1000 ease-linear ${
+                  timeLeft > 10
+                    ? 'bg-green-500'
+                    : timeLeft > 5
+                    ? 'bg-orange-500'
+                    : 'bg-red-500 animate-pulse'
+                }`}
+                style={{
+                  width: `${(timeLeft / gameMode.turnTimerSeconds) * 100}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="bg-purple-50 rounded-xl p-6 mb-6">
           <p className="text-lg leading-relaxed text-gray-900">
             {card.template.split('___').map((part, index) => (
