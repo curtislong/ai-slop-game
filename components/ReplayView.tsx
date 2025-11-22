@@ -24,8 +24,11 @@ export default function ReplayView() {
 
       if (!originalPrompt || !finalPrompt) return;
 
+      // Check if any turns had corruption (sabotage was enabled)
+      const hadSabotage = gameState.turns.some(turn => turn.originalPrompt || turn.corruptedPrompt);
+
       setIsCalculating(true);
-      const result = await calculateSimilarityScore(originalPrompt, finalPrompt);
+      const result = await calculateSimilarityScore(originalPrompt, finalPrompt, hadSabotage);
       setScore(result);
       setIsCalculating(false);
     }
@@ -90,26 +93,50 @@ export default function ReplayView() {
               <p className="text-gray-600 font-medium">Calculating similarity score...</p>
             </div>
           ) : score && (
-            <div className={`rounded-xl p-4 text-center border-4 ${
-              score.grade === 'gold' ? 'bg-yellow-50 border-yellow-400' :
-              score.grade === 'silver' ? 'bg-gray-100 border-gray-400' :
-              score.grade === 'bronze' ? 'bg-orange-50 border-orange-400' :
-              'bg-purple-50 border-purple-400'
-            }`}>
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <p className="text-4xl font-black text-gray-900">
-                  {score.score}%
+            <div>
+              <div className={`rounded-xl p-4 text-center border-4 ${
+                score.grade === 'gold' ? 'bg-yellow-50 border-yellow-400' :
+                score.grade === 'silver' ? 'bg-gray-100 border-gray-400' :
+                score.grade === 'bronze' ? 'bg-orange-50 border-orange-400' :
+                'bg-purple-50 border-purple-400'
+              }`}>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <p className="text-4xl font-black text-gray-900">
+                    {score.score}%
+                  </p>
+                  <span className="text-3xl">
+                    {score.grade === 'gold' ? '🏆' :
+                     score.grade === 'silver' ? '🥈' :
+                     score.grade === 'bronze' ? '🥉' :
+                     '🎭'}
+                  </span>
+                </div>
+                <p className="text-sm font-bold text-gray-800">
+                  {score.message}
                 </p>
-                <span className="text-3xl">
-                  {score.grade === 'gold' ? '🏆' :
-                   score.grade === 'silver' ? '🥈' :
-                   score.grade === 'bronze' ? '🥉' :
-                   '🎭'}
-                </span>
               </div>
-              <p className="text-sm font-bold text-gray-800">
-                {score.message}
-              </p>
+
+              {/* Team vs AI Stats */}
+              {score.teamVsAI && (
+                <div className="mt-3 bg-orange-50 border-2 border-orange-300 rounded-xl p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">👥</span>
+                      <span className="text-sm font-bold text-gray-900">Team</span>
+                    </div>
+                    <span className="text-xs font-bold text-orange-600">
+                      {score.teamVsAI.teamWon ? 'VICTORY' : 'DEFEAT'}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-gray-900">AI</span>
+                      <span className="text-xl">🤖</span>
+                    </div>
+                  </div>
+                  <div className="text-xs text-orange-700">
+                    AI Sabotage Impact: <span className="font-bold">{score.teamVsAI.sabotageImpact}%</span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

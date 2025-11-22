@@ -8,8 +8,10 @@ import GuessTurn from '@/components/GuessTurn';
 import ReplayView from '@/components/ReplayView';
 import TurnTransition from '@/components/TurnTransition';
 import CelebrationCard from '@/components/CelebrationCard';
+import CorruptionAnimation from '@/components/CorruptionAnimation';
 import FlipCard from '@/components/FlipCard';
 import { generateImage, generateMockImage } from '@/lib/fal-client';
+import { corruptPrompt, CorruptionResult } from '@/lib/corruption';
 
 export default function Home() {
   const { gameState, submitTurn } = useGame();
@@ -18,6 +20,8 @@ export default function Home() {
   const [showTurnCard, setShowTurnCard] = useState(false);
   const [isFlipping, setIsFlipping] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [corruptionResult, setCorruptionResult] = useState<CorruptionResult | null>(null);
+  const [showCorruption, setShowCorruption] = useState(false);
 
   const handleTurnSubmit = async (prompt: string, imageUrl?: string) => {
     setError(null);
@@ -30,14 +34,33 @@ export default function Home() {
     setIsGenerating(true);
 
     try {
+      let finalPrompt = prompt;
+      let corruption: CorruptionResult | null = null;
+
+      // Step 1: Apply corruption if sabotage is enabled
+      if (gameState.settings.sabotageEnabled && !imageUrl) {
+        corruption = await corruptPrompt(
+          prompt,
+          undefined, // Let it pick random strategy
+          gameState.settings.sabotageMode
+        );
+        setCorruptionResult(corruption);
+        setShowCorruption(true);
+
+        // Wait for corruption animation to complete (handled by CorruptionAnimation component)
+        // This will be controlled by the onComplete callback
+        return;
+      }
+
+      // Step 2: Generate image
       let result;
       if (!imageUrl) {
         // Use mock for now - switch to real API when key is set
         const useMock = !process.env.NEXT_PUBLIC_FAL_API_KEY;
 
         result = useMock
-          ? await generateMockImage(prompt)
-          : await generateImage({ prompt });
+          ? await generateMockImage(finalPrompt)
+          : await generateImage({ prompt: finalPrompt });
       } else {
         result = { imageUrl };
       }
@@ -47,11 +70,11 @@ export default function Home() {
 
       if (isFinalTurn) {
         // Store the final turn data but don't submit yet
-        setFinalTurnData({ prompt, imageUrl: result.imageUrl });
+        setFinalTurnData({ prompt: finalPrompt, imageUrl: result.imageUrl });
         setShowCelebration(true);
       } else {
         // Submit turn and show next player's card
-        submitTurn(prompt, result.imageUrl);
+        submitTurn(finalPrompt, result.imageUrl);
         setShowTurnCard(true);
         setTurnStartTime(null);
       }
@@ -64,16 +87,73 @@ export default function Home() {
     }
   };
 
+  const handleCorruptionComplete = async (fightBackText?: string) => {
+    setShowCorruption(false);
+
+    if (!corruptionResult) return;
+
+    const isFinalTurn = gameState.currentTurnIndex === gameState.players.length - 1;
+    setIsFlipping(true);
+    setIsGenerating(true);
+
+    try {
+      // Use corrupted prompt, optionally with fight back text
+      let finalPrompt = corruptionResult.corrupted;
+      if (fightBackText && fightBackText.trim()) {
+        finalPrompt = `${corruptionResult.corrupted} ${fightBackText.trim()}`;
+      }
+
+      // Generate image with corrupted prompt
+      const useMock = !process.env.NEXT_PUBLIC_FAL_API_KEY;
+      const result = useMock
+        ? await generateMockImage(finalPrompt)
+        : await generateImage({ prompt: finalPrompt });
+
+      // Wait for flip animation
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      // Prepare corruption data for storage
+      const corruptionData = {
+        original: corruptionResult.original,
+        corrupted: finalPrompt, // Use final prompt (includes fight back if added)
+      };
+
+      if (isFinalTurn) {
+        setFinalTurnData({
+          prompt: finalPrompt,
+          imageUrl: result.imageUrl,
+          corruptionData,
+        });
+        setShowCelebration(true);
+      } else {
+        submitTurn(finalPrompt, result.imageUrl, corruptionData);
+        setShowTurnCard(true);
+        setTurnStartTime(null);
+      }
+    } catch (err) {
+      console.error('Generation error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate image');
+    } finally {
+      setIsFlipping(false);
+      setIsGenerating(false);
+      setCorruptionResult(null);
+    }
+  };
+
   const handleCelebrationComplete = () => {
     // Now submit the final turn, which will trigger replay
     if (finalTurnData) {
-      submitTurn(finalTurnData.prompt, finalTurnData.imageUrl);
+      submitTurn(finalTurnData.prompt, finalTurnData.imageUrl, finalTurnData.corruptionData);
     }
     setShowCelebration(false);
     setFinalTurnData(null);
   };
 
-  const [finalTurnData, setFinalTurnData] = useState<{ prompt: string; imageUrl: string } | null>(null);
+  const [finalTurnData, setFinalTurnData] = useState<{
+    prompt: string;
+    imageUrl: string;
+    corruptionData?: { original: string; corrupted: string };
+  } | null>(null);
   const [turnStartTime, setTurnStartTime] = useState<number | null>(null);
 
   // When game status changes to playing, show the turn card
@@ -95,6 +175,18 @@ export default function Home() {
 
   if (gameState.status === 'replay') {
     return <ReplayView />;
+  }
+
+  // Show corruption animation
+  if (showCorruption && corruptionResult) {
+    return (
+      <CorruptionAnimation
+        corruptionResult={corruptionResult}
+        onComplete={handleCorruptionComplete}
+        allowFightBack={gameState.settings.allowFightBack}
+        onFightBack={handleCorruptionComplete}
+      />
+    );
   }
 
   // Show celebration card after final turn

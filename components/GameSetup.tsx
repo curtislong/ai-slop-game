@@ -94,6 +94,113 @@ export default function GameSetup() {
           </button>
         </div>
 
+        {/* AI Sabotage toggle */}
+        <div className="mb-6">
+          <label className="block text-sm font-bold text-gray-900 mb-2">
+            AI Sabotage
+          </label>
+          <button
+            onClick={() => updateSettings({
+              sabotageEnabled: !gameState.settings.sabotageEnabled
+            })}
+            className={`w-full text-left p-3 rounded-lg transition-all ${
+              gameState.settings.sabotageEnabled
+                ? 'bg-orange-600 text-white'
+                : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+            }`}
+          >
+            <div className="font-bold">
+              {gameState.settings.sabotageEnabled ? 'AI Will Corrupt Prompts' : 'No Sabotage'}
+            </div>
+            <div className={`text-xs ${
+              gameState.settings.sabotageEnabled
+                ? 'text-orange-100'
+                : 'text-gray-600'
+            }`}>
+              {gameState.settings.sabotageEnabled
+                ? 'AI "helps" with your prompts!'
+                : 'Play normally'}
+            </div>
+          </button>
+        </div>
+
+        {/* Sabotage mode selector (only show if sabotage enabled) */}
+        {gameState.settings.sabotageEnabled && (
+          <div className="mb-6">
+            <label className="block text-sm font-bold text-gray-900 mb-2">
+              Sabotage Personality
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {(['wholesome', 'naughty', 'absurd', 'deranged'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => updateSettings({ sabotageMode: mode })}
+                  className={`text-left p-3 rounded-lg transition-all ${
+                    gameState.settings.sabotageMode === mode
+                      ? 'bg-orange-600 text-white'
+                      : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                  }`}
+                >
+                  <div className="font-bold capitalize">{mode}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Sabotage options (only show if sabotage enabled) */}
+        {gameState.settings.sabotageEnabled && (
+          <div className="mb-6 space-y-2">
+            <button
+              onClick={() => updateSettings({
+                allowFightBack: !gameState.settings.allowFightBack
+              })}
+              className={`w-full text-left p-3 rounded-lg transition-all ${
+                gameState.settings.allowFightBack
+                  ? 'bg-orange-600 text-white'
+                  : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+              }`}
+            >
+              <div className="font-bold">
+                {gameState.settings.allowFightBack ? 'Fight Back: ON' : 'Fight Back: OFF'}
+              </div>
+              <div className={`text-xs ${
+                gameState.settings.allowFightBack
+                  ? 'text-orange-100'
+                  : 'text-gray-600'
+              }`}>
+                {gameState.settings.allowFightBack
+                  ? 'Add emergency words to salvage!'
+                  : 'No second chances'}
+              </div>
+            </button>
+
+            <button
+              onClick={() => updateSettings({
+                transparentSabotage: !gameState.settings.transparentSabotage
+              })}
+              className={`w-full text-left p-3 rounded-lg transition-all ${
+                gameState.settings.transparentSabotage
+                  ? 'bg-orange-600 text-white'
+                  : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+              }`}
+            >
+              <div className="font-bold">
+                {gameState.settings.transparentSabotage ? 'Transparent: ON' : 'Transparent: OFF'}
+              </div>
+              <div className={`text-xs ${
+                gameState.settings.transparentSabotage
+                  ? 'text-orange-100'
+                  : 'text-gray-600'
+              }`}>
+                {gameState.settings.transparentSabotage
+                  ? 'Show corruption to next player'
+                  : 'Keep corruption secret'}
+              </div>
+            </button>
+          </div>
+        )}
+
         {/* Round selector */}
         <div className="mb-6">
           <label className="block text-sm font-bold text-gray-900 mb-2">

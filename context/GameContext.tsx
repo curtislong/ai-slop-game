@@ -11,7 +11,7 @@ interface GameContextType {
   addPlayer: (name: string) => void;
   removePlayer: (playerId: string) => void;
   startGame: () => void;
-  submitTurn: (prompt: string, imageUrl: string) => void;
+  submitTurn: (prompt: string, imageUrl: string, corruptionData?: { original: string; corrupted: string }) => void;
   resetGame: () => void;
   updateSettings: (settings: Partial<GameSettings>) => void;
   startNextRound: () => void;
@@ -25,6 +25,10 @@ const initialSettings: GameSettings = {
   maxPlayers: 10,
   numberOfRounds: 1,
   gameMode: DEFAULT_GAME_MODE,
+  sabotageEnabled: false,
+  sabotageMode: 'absurd',
+  allowFightBack: false,
+  transparentSabotage: false,
 };
 
 const createInitialState = (): GameState => ({
@@ -82,7 +86,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const submitTurn = (prompt: string, imageUrl: string) => {
+  const submitTurn = (prompt: string, imageUrl: string, corruptionData?: { original: string; corrupted: string }) => {
     const currentPlayer = gameState.players[gameState.currentTurnIndex];
     if (!currentPlayer) return;
 
@@ -93,6 +97,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
       imageUrl,
       timestamp: Date.now(),
       isMadLib: gameState.currentTurnIndex === 0,
+      ...(corruptionData && {
+        originalPrompt: corruptionData.original,
+        corruptedPrompt: corruptionData.corrupted,
+      }),
     };
 
     const newState = advanceTurn(gameState, turn);

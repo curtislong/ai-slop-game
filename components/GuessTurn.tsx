@@ -27,6 +27,13 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating, turnS
   const isOverLimit = wordLimit !== Infinity && currentWordCount > wordLimit;
   const gameMode = getGameMode(gameState.settings.gameMode);
 
+  // Get previous turn's corruption data for transparent sabotage
+  const previousTurn = gameState.turns[gameState.turns.length - 1];
+  const showTransparentSabotage = gameState.settings.sabotageEnabled &&
+                                   gameState.settings.transparentSabotage &&
+                                   previousTurn?.originalPrompt &&
+                                   previousTurn?.corruptedPrompt;
+
   // Timer effect - only starts when turnStartTime is set (card flipped)
   useEffect(() => {
     if (gameState.settings.turnTimerEnabled && !isGenerating && turnStartTime !== null) {
@@ -107,6 +114,33 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating, turnS
             </div>
           </div>
         </div>
+
+        {/* Transparent Sabotage Info */}
+        {showTransparentSabotage && (
+          <div className="mb-4 bg-orange-50 border-2 border-orange-300 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-2xl">🤖</span>
+              <h3 className="text-sm font-bold text-orange-800">AI Sabotage Detected!</h3>
+            </div>
+            <div className="space-y-2">
+              <div>
+                <p className="text-xs text-orange-700 font-bold mb-1">Original Prompt:</p>
+                <p className="text-sm text-gray-900 bg-white rounded px-2 py-1 border border-orange-200">
+                  {previousTurn.originalPrompt}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-orange-700 font-bold mb-1">AI Changed It To:</p>
+                <p className="text-sm text-gray-900 bg-white rounded px-2 py-1 border border-orange-200">
+                  {previousTurn.corruptedPrompt}
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-orange-600 mt-2 italic">
+              The image above was generated from the corrupted version.
+            </p>
+          </div>
+        )}
 
         <div className="mb-4">
           <label className="block text-sm font-bold text-gray-900 mb-2">

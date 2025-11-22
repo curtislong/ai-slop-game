@@ -4,6 +4,10 @@ export interface ScoringResult {
   score: number; // 0-100
   grade: 'gold' | 'silver' | 'bronze' | 'none';
   message: string;
+  teamVsAI?: {
+    teamWon: boolean;
+    sabotageImpact: number; // How much corruption affected the result
+  };
 }
 
 // Calculate cosine similarity between two vectors
@@ -55,7 +59,8 @@ async function getEmbedding(text: string): Promise<number[]> {
 // Calculate similarity score using AI embeddings
 export async function calculateSimilarityScore(
   originalPrompt: string,
-  finalPrompt: string
+  finalPrompt: string,
+  hadSabotage: boolean = false
 ): Promise<ScoringResult> {
   try {
     // Get embeddings for both prompts
@@ -70,25 +75,51 @@ export async function calculateSimilarityScore(
     // Convert to percentage (0-100)
     const score = Math.round(similarity * 100);
 
-    // Determine grade
+    // Determine grade and message
     let grade: 'gold' | 'silver' | 'bronze' | 'none';
     let message: string;
 
-    if (score >= 90) {
-      grade = 'gold';
-      message = 'Amazing! You kept the essence intact!';
-    } else if (score >= 75) {
-      grade = 'silver';
-      message = 'Great job! Most of the meaning survived!';
-    } else if (score >= 60) {
-      grade = 'bronze';
-      message = 'Nice work! Some elements made it through!';
-    } else {
-      grade = 'none';
-      message = 'Total drift! But that\'s AI, am I right?';
-    }
+    if (hadSabotage) {
+      // Team vs AI messaging
+      if (score >= 75) {
+        grade = 'gold';
+        message = 'Victory! The team overcame the AI sabotage!';
+      } else if (score >= 60) {
+        grade = 'silver';
+        message = 'Good fight! You partially resisted the chaos!';
+      } else if (score >= 45) {
+        grade = 'bronze';
+        message = 'The AI put up a fight, but you survived!';
+      } else {
+        grade = 'none';
+        message = 'AI wins this round! Total chaos achieved!';
+      }
 
-    return { score, grade, message };
+      // Calculate Team vs AI data
+      const teamVsAI = {
+        teamWon: score >= 60, // Team wins if score is 60% or higher
+        sabotageImpact: 100 - score, // How much the AI corrupted things
+      };
+
+      return { score, grade, message, teamVsAI };
+    } else {
+      // Normal game messaging
+      if (score >= 90) {
+        grade = 'gold';
+        message = 'Amazing! You kept the essence intact!';
+      } else if (score >= 75) {
+        grade = 'silver';
+        message = 'Great job! Most of the meaning survived!';
+      } else if (score >= 60) {
+        grade = 'bronze';
+        message = 'Nice work! Some elements made it through!';
+      } else {
+        grade = 'none';
+        message = 'Total drift! But that\'s AI, am I right?';
+      }
+
+      return { score, grade, message };
+    }
   } catch (error) {
     console.error('Scoring error:', error);
     // Fallback to basic word overlap if API fails

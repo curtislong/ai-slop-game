@@ -16,6 +16,8 @@ export interface Turn {
   playerId: string;
   playerName: string;
   prompt: string; // either filled mad lib or guess
+  originalPrompt?: string; // original before corruption (if sabotage enabled)
+  corruptedPrompt?: string; // corrupted version (if sabotage enabled)
   imageUrl: string; // generated image
   timestamp: number;
   isMadLib: boolean; // true for first turn, false for guesses
@@ -54,4 +56,9 @@ export interface GameSettings {
   maxPlayers: number;
   numberOfRounds: number;
   gameMode: string; // ID of the selected game mode
+  // AI Sabotage settings
+  sabotageEnabled: boolean;
+  sabotageMode: 'wholesome' | 'naughty' | 'absurd' | 'deranged';
+  allowFightBack: boolean;
+  transparentSabotage: boolean; // Show both original and corrupted to next player
 }
