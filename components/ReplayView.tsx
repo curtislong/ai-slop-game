@@ -201,11 +201,34 @@ export default function ReplayView() {
                   </div>
                 </div>
               ) : (
-                <div className="bg-purple-50 rounded-xl p-6 border-2 border-purple-200 max-h-[350px] overflow-auto">
-                  <p className="text-sm text-purple-700 font-bold mb-2">
-                    {content.turn.isMadLib ? 'Original Mad Lib:' : 'Their Guess:'}
-                  </p>
-                  <p className="text-lg text-gray-900">{content.turn.prompt}</p>
+                <div className="space-y-3">
+                  {/* Show AI corruption if it happened */}
+                  {content.turn.originalPrompt && content.turn.corruptedPrompt ? (
+                    <>
+                      <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
+                        <p className="text-xs text-blue-700 font-bold mb-2">
+                          {content.turn.isMadLib ? 'Original Mad Lib:' : 'Their Guess:'}
+                        </p>
+                        <p className="text-base text-gray-900">{content.turn.originalPrompt}</p>
+                      </div>
+                      <div className="flex items-center justify-center">
+                        <div className="text-2xl">↓</div>
+                      </div>
+                      <div className="bg-green-50 rounded-xl p-4 border-2 border-green-300">
+                        <p className="text-xs text-green-700 font-bold mb-2">
+                          AI "Improved" It To:
+                        </p>
+                        <p className="text-base text-gray-900">{content.turn.corruptedPrompt}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="bg-purple-50 rounded-xl p-6 border-2 border-purple-200 max-h-[350px] overflow-auto">
+                      <p className="text-sm text-purple-700 font-bold mb-2">
+                        {content.turn.isMadLib ? 'Original Mad Lib:' : 'Their Guess:'}
+                      </p>
+                      <p className="text-lg text-gray-900">{content.turn.prompt}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

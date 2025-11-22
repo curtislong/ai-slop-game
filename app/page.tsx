@@ -39,10 +39,24 @@ export default function Home() {
 
       // Step 1: Apply corruption if sabotage mode is selected
       if (gameState.settings.gameMode === 'sabotage' && !imageUrl) {
+        // Calculate word limit based on the original mad lib prompt
+        const originalPrompt = gameState.turns[0]?.prompt || prompt;
+        const wordCount = originalPrompt.trim().split(/\s+/).length;
+        const gameMode = gameState.settings.gameMode;
+
+        // Apply same word limit rules as the game mode
+        let wordLimit: number;
+        if (gameMode === 'classic') {
+          wordLimit = Math.ceil(wordCount * 0.5);
+        } else {
+          wordLimit = wordCount;
+        }
+
         corruption = await corruptPrompt(
           prompt,
           undefined, // Let it pick random strategy
-          gameState.settings.sabotageMode
+          gameState.settings.sabotageMode,
+          wordLimit
         );
         setCorruptionResult(corruption);
         setShowCorruption(true);

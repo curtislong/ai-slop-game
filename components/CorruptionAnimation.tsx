@@ -79,6 +79,8 @@ export default function CorruptionAnimation({
         return 'Adding clarifying details...';
       case 'truncator':
         return 'Completing your sentence...';
+      case 'homophone_rhyme':
+        return 'Improving pronunciation...';
       default:
         return 'Optimizing for better results...';
     }

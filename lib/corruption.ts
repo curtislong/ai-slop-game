@@ -1,6 +1,6 @@
 // AI Corruption Engine for AI Slop: The Game!
 
-export type CorruptionStrategy = 'synonym_chaos' | 'elaborator' | 'truncator';
+export type CorruptionStrategy = 'synonym_chaos' | 'elaborator' | 'truncator' | 'homophone_rhyme';
 export type CorruptionMode = 'wholesome' | 'naughty' | 'absurd' | 'deranged';
 
 export interface CorruptionResult {
@@ -67,13 +67,23 @@ async function callOpenAI(systemPrompt: string, userPrompt: string): Promise<str
   return data.choices[0].message.content.trim();
 }
 
+// Count words in a string
+function countWords(text: string): number {
+  if (!text.trim()) return 0;
+  return text.trim().split(/\s+/).length;
+}
+
 // Strategy: Synonym Chaos
-async function synonymChaos(prompt: string, mode: CorruptionMode): Promise<CorruptionResult> {
+async function synonymChaos(prompt: string, mode: CorruptionMode, wordLimit?: number): Promise<CorruptionResult> {
   const personality = MODE_PERSONALITIES[mode];
+  const wordCount = countWords(prompt);
+  const limit = wordLimit || wordCount;
 
   const systemPrompt = `${personality}
 
 Your task: Take the user's image generation prompt and replace 2-3 key words with absurd synonyms or near-misses that change the meaning. Keep the sentence structure mostly intact but make it weird/funny/unexpected based on your personality.
+
+IMPORTANT: Your response must be ${limit} words or fewer.
 
 Return ONLY the modified prompt, nothing else.`;
 
@@ -96,12 +106,16 @@ Return ONLY the modified prompt, nothing else.`;
 }
 
 // Strategy: Elaborator
-async function elaborator(prompt: string, mode: CorruptionMode): Promise<CorruptionResult> {
+async function elaborator(prompt: string, mode: CorruptionMode, wordLimit?: number): Promise<CorruptionResult> {
   const personality = MODE_PERSONALITIES[mode];
+  const wordCount = countWords(prompt);
+  const limit = wordLimit || wordCount;
 
   const systemPrompt = `${personality}
 
 Your task: Take the user's image generation prompt and ADD 1-2 completely unnecessary, misleading details that fit your personality. Don't replace words, just add more descriptive elements that change the vibe.
+
+IMPORTANT: Your response must be ${limit} words or fewer.
 
 Return ONLY the modified prompt, nothing else.`;
 
@@ -123,7 +137,7 @@ Return ONLY the modified prompt, nothing else.`;
 }
 
 // Strategy: Truncator with Unhelpful Autocomplete
-async function truncator(prompt: string, mode: CorruptionMode): Promise<CorruptionResult> {
+async function truncator(prompt: string, mode: CorruptionMode, wordLimit?: number): Promise<CorruptionResult> {
   const personality = MODE_PERSONALITIES[mode];
 
   // Find a good truncation point (roughly 40-70% through)
@@ -131,9 +145,15 @@ async function truncator(prompt: string, mode: CorruptionMode): Promise<Corrupti
   const truncateAt = Math.floor(words.length * (0.4 + Math.random() * 0.3));
   const truncated = words.slice(0, truncateAt).join(' ');
 
+  const wordCount = countWords(prompt);
+  const limit = wordLimit || wordCount;
+  const maxCompletionWords = Math.max(1, limit - truncateAt);
+
   const systemPrompt = `${personality}
 
-Your task: The user was typing "${truncated}" but got cut off. "Helpfully" complete their sentence based on your personality. Add 3-8 words that you think they were going to say (but make it completely wrong/unhelpful based on your personality).
+Your task: The user was typing "${truncated}" but got cut off. "Helpfully" complete their sentence based on your personality. Add words that you think they were going to say (but make it completely wrong/unhelpful based on your personality).
+
+IMPORTANT: Add no more than ${maxCompletionWords} words.
 
 Return ONLY the completion (the words you're adding), nothing else. Don't include the original truncated text.`;
 
@@ -163,24 +183,63 @@ Return ONLY the completion (the words you're adding), nothing else. Don't includ
   };
 }
 
+// Strategy: Homophone/Rhyme Chaos
+async function homophoneRhyme(prompt: string, mode: CorruptionMode, wordLimit?: number): Promise<CorruptionResult> {
+  const personality = MODE_PERSONALITIES[mode];
+  const wordCount = countWords(prompt);
+  const limit = wordLimit || wordCount;
+
+  const systemPrompt = `${personality}
+
+Your task: Take the user's image generation prompt and replace 2-4 key words with homophones (words that sound similar) or rhyming words that completely change the meaning. Make it sound similar but mean something totally different.
+
+Examples:
+- "a model walking through animals at the zoo" → "a bottle talking through candles in a shoe"
+- "knight riding a horse" → "night hiding a morse"
+- "cat on a mat" → "bat in a vat"
+
+IMPORTANT: Your response must be ${limit} words or fewer.
+
+Return ONLY the modified prompt, nothing else.`;
+
+  const corrupted = await callOpenAI(systemPrompt, prompt);
+
+  const changes: CorruptionChange[] = [{
+    type: 'replace',
+    originalText: prompt,
+    newText: corrupted,
+    position: 0
+  }];
+
+  return {
+    original: prompt,
+    corrupted,
+    strategy: 'homophone_rhyme',
+    changes
+  };
+}
+
 // Main corruption function
 export async function corruptPrompt(
   prompt: string,
   strategy?: CorruptionStrategy,
-  mode: CorruptionMode = 'absurd'
+  mode: CorruptionMode = 'absurd',
+  wordLimit?: number
 ): Promise<CorruptionResult> {
   // If no strategy specified, pick one randomly
-  const strategies: CorruptionStrategy[] = ['synonym_chaos', 'elaborator', 'truncator'];
+  const strategies: CorruptionStrategy[] = ['synonym_chaos', 'elaborator', 'truncator', 'homophone_rhyme'];
   const selectedStrategy = strategy || strategies[Math.floor(Math.random() * strategies.length)];
 
   try {
     switch (selectedStrategy) {
       case 'synonym_chaos':
-        return await synonymChaos(prompt, mode);
+        return await synonymChaos(prompt, mode, wordLimit);
       case 'elaborator':
-        return await elaborator(prompt, mode);
+        return await elaborator(prompt, mode, wordLimit);
       case 'truncator':
-        return await truncator(prompt, mode);
+        return await truncator(prompt, mode, wordLimit);
+      case 'homophone_rhyme':
+        return await homophoneRhyme(prompt, mode, wordLimit);
       default:
         throw new Error(`Unknown strategy: ${selectedStrategy}`);
     }
