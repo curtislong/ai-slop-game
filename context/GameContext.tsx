@@ -25,10 +25,8 @@ const initialSettings: GameSettings = {
   maxPlayers: 10,
   numberOfRounds: 1,
   gameMode: DEFAULT_GAME_MODE,
-  sabotageEnabled: false,
   sabotageMode: 'absurd',
   allowFightBack: false,
-  transparentSabotage: false,
 };
 
 const createInitialState = (): GameState => ({

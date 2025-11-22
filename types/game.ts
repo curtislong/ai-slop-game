@@ -56,9 +56,7 @@ export interface GameSettings {
   maxPlayers: number;
   numberOfRounds: number;
   gameMode: string; // ID of the selected game mode
-  // AI Sabotage settings
-  sabotageEnabled: boolean;
+  // AI Sabotage settings (part of game mode)
   sabotageMode: 'wholesome' | 'naughty' | 'absurd' | 'deranged';
   allowFightBack: boolean;
-  transparentSabotage: boolean; // Show both original and corrupted to next player
 }

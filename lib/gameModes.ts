@@ -29,6 +29,15 @@ export const GAME_MODES: Record<string, GameModeConfig> = {
     turnTimerSeconds: 0,
     imageQuality: 'standard',
   },
+  sabotage: {
+    id: 'sabotage',
+    name: 'AI Sabotage',
+    description: 'AI helps with your prompts!',
+    wordLimitMultiplier: 1,
+    turnTimerEnabled: false,
+    turnTimerSeconds: 0,
+    imageQuality: 'standard',
+  },
 };
 
 export const DEFAULT_GAME_MODE = 'classic';

@@ -37,8 +37,8 @@ export default function Home() {
       let finalPrompt = prompt;
       let corruption: CorruptionResult | null = null;
 
-      // Step 1: Apply corruption if sabotage is enabled
-      if (gameState.settings.sabotageEnabled && !imageUrl) {
+      // Step 1: Apply corruption if sabotage mode is selected
+      if (gameState.settings.gameMode === 'sabotage' && !imageUrl) {
         corruption = await corruptPrompt(
           prompt,
           undefined, // Let it pick random strategy

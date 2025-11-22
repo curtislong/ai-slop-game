@@ -74,13 +74,13 @@ export default function CorruptionAnimation({
   const getStrategyMessage = () => {
     switch (corruptionResult.strategy) {
       case 'synonym_chaos':
-        return 'Improving your word choices...';
+        return 'Enhancing your vocabulary...';
       case 'elaborator':
-        return 'Adding helpful details...';
+        return 'Adding clarifying details...';
       case 'truncator':
-        return 'Finishing your thought...';
+        return 'Completing your sentence...';
       default:
-        return 'Optimizing your prompt...';
+        return 'Optimizing for better results...';
     }
   };
 
@@ -91,11 +91,11 @@ export default function CorruptionAnimation({
         {/* Stage 1: Intercepted */}
         {stage === 'intercepted' && (
           <div className="text-center animate-pulse">
-            <div className="text-6xl mb-4">🤖</div>
-            <h2 className="text-3xl font-black text-orange-600 mb-4">
-              AI INTERCEPTED YOUR PROMPT...
+            <div className="text-6xl mb-4">✨</div>
+            <h2 className="text-3xl font-black text-blue-600 mb-4">
+              AI ASSISTANT
             </h2>
-            <p className="text-gray-600 font-medium">Let me help you with that!</p>
+            <p className="text-gray-600 font-medium">I noticed your prompt could use some improvements!</p>
           </div>
         )}
 
@@ -125,29 +125,29 @@ export default function CorruptionAnimation({
         {/* Stage 4: Showing Corrupted */}
         {stage === 'showing_corrupted' && (
           <div className="text-center w-full">
-            <div className="text-4xl mb-4">😇</div>
-            <h3 className="text-xl font-bold text-green-600 mb-4">Fixed it for you!</h3>
+            <div className="text-4xl mb-4">✅</div>
+            <h3 className="text-xl font-bold text-green-600 mb-4">All improved!</h3>
             <div className="bg-green-50 border-2 border-green-300 rounded-xl p-6">
               <p className="text-lg text-gray-900 font-medium">{corruptionResult.corrupted}</p>
             </div>
-            <p className="text-sm text-gray-600 mt-4 italic">Generating image from improved prompt...</p>
+            <p className="text-sm text-gray-600 mt-4 italic">Generating image from enhanced prompt...</p>
           </div>
         )}
 
         {/* Stage 5: Fight Back */}
         {stage === 'fight_back' && (
           <div className="text-center w-full">
-            <div className="text-4xl mb-4">⚔️</div>
-            <h3 className="text-xl font-bold text-red-600 mb-4">
-              FIGHT BACK! ({fightBackTimer}s)
+            <div className="text-4xl mb-4">🤔</div>
+            <h3 className="text-xl font-bold text-orange-600 mb-4">
+              Not quite right? ({fightBackTimer}s)
             </h3>
-            <div className="bg-red-50 border-2 border-red-300 rounded-xl p-6 mb-4">
-              <p className="text-sm text-gray-700 mb-2">Corrupted to:</p>
+            <div className="bg-orange-50 border-2 border-orange-300 rounded-xl p-6 mb-4">
+              <p className="text-sm text-gray-700 mb-2">AI suggested:</p>
               <p className="text-lg text-gray-900 font-medium mb-4">{corruptionResult.corrupted}</p>
             </div>
             <div className="mb-4">
               <label className="block text-sm font-bold text-gray-900 mb-2">
-                Add 2-3 words to salvage it:
+                Add a few words to refine it:
               </label>
               <input
                 type="text"
@@ -158,20 +158,20 @@ export default function CorruptionAnimation({
                     handleFightBackSubmit();
                   }
                 }}
-                placeholder="emergency words..."
-                className="w-full px-4 py-3 border-2 border-red-300 rounded-xl focus:border-red-500 focus:outline-none text-gray-900"
+                placeholder="additional words..."
+                className="w-full px-4 py-3 border-2 border-orange-300 rounded-xl focus:border-orange-500 focus:outline-none text-gray-900"
                 autoFocus
               />
             </div>
             <button
               onClick={handleFightBackSubmit}
-              className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700"
+              className="px-6 py-3 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-700"
             >
-              Submit ({fightBackTimer}s)
+              Continue ({fightBackTimer}s)
             </button>
             <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
               <div
-                className="bg-red-500 h-2 rounded-full transition-all duration-1000"
+                className="bg-orange-500 h-2 rounded-full transition-all duration-1000"
                 style={{ width: `${(fightBackTimer / 5) * 100}%` }}
               />
             </div>
