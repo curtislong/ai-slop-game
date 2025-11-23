@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useGame } from '@/context/GameContext';
 import Image from 'next/image';
-import { calculateSimilarityScore } from '@/lib/scoring';
+import { calculateSimilarityScore, ScoringResult } from '@/lib/scoring';
 
 export default function ReplayView() {
   const { gameState, resetGame, startNextRound, awardPoints } = useGame();
   const [currentStep, setCurrentStep] = useState(0);
-  const [score, setScore] = useState<{ score: number; grade: string; message: string } | null>(null);
+  const [score, setScore] = useState<ScoringResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(true);
   const [pointsAwarded, setPointsAwarded] = useState(false);
 

@@ -42,15 +42,9 @@ export default function Home() {
         // Calculate word limit based on the original mad lib prompt
         const originalPrompt = gameState.turns[0]?.prompt || prompt;
         const wordCount = originalPrompt.trim().split(/\s+/).length;
-        const gameMode = gameState.settings.gameMode;
 
-        // Apply same word limit rules as the game mode
-        let wordLimit: number;
-        if (gameMode === 'classic') {
-          wordLimit = Math.ceil(wordCount * 0.5);
-        } else {
-          wordLimit = wordCount;
-        }
+        // Sabotage mode uses full word count as limit
+        const wordLimit = wordCount;
 
         corruption = await corruptPrompt(
           prompt,
