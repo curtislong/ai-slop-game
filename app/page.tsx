@@ -46,12 +46,29 @@ export default function Home() {
         // Sabotage mode uses full word count as limit
         const wordLimit = wordCount;
 
+        console.log('[DEBUG] Corruption check:', {
+          gameMode: gameState.settings.gameMode,
+          originalPrompt,
+          originalWordCount: wordCount,
+          playerPrompt: prompt,
+          playerWordCount: prompt.trim().split(/\s+/).length,
+          wordLimit,
+          shouldCorrupt: wordLimit > prompt.trim().split(/\s+/).length
+        });
+
         corruption = await corruptPrompt(
           prompt,
           undefined, // Let it pick random strategy
           gameState.settings.sabotageMode,
           wordLimit
         );
+
+        console.log('[DEBUG] Corruption result:', {
+          original: corruption.original,
+          corrupted: corruption.corrupted,
+          changed: corruption.corrupted !== corruption.original,
+          strategy: corruption.strategy
+        });
 
         // Only show corruption animation if AI actually changed something
         if (corruption.corrupted !== corruption.original) {

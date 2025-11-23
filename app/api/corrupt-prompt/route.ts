@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
 export async function POST(req: NextRequest) {
+  // Read environment variable inside the handler for Edge Functions
+  const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
   if (!OPENAI_API_KEY) {
     return NextResponse.json(
       { error: 'OpenAI API key not configured' },

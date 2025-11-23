@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 
-const FAL_API_KEY = process.env.FAL_API_KEY;
 const FAL_MODEL = 'fal-ai/flux/schnell';
 
 export async function POST(req: NextRequest) {
+  // Read environment variable inside the handler for Edge Functions
+  const FAL_API_KEY = process.env.FAL_API_KEY;
+
   if (!FAL_API_KEY) {
     return NextResponse.json(
       { error: 'FAL API key not configured' },
