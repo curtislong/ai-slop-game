@@ -31,33 +31,29 @@ function cosineSimilarity(a: number[], b: number[]): number {
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-// Get embedding from OpenAI
-async function getEmbedding(text: string): Promise<number[]> {
-  const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
-
-  if (!apiKey) {
-    throw new Error('OpenAI API key not configured');
-  }
-
-  const response = await fetch('https://api.openai.com/v1/embeddings', {
+// Get embeddings from OpenAI (via server proxy)
+async function getEmbeddings(originalText: string, finalText: string): Promise<{ originalEmbedding: number[]; finalEmbedding: number[] }> {
+  const response = await fetch('/api/calculate-score', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'text-embedding-3-small',
-      input: text,
+      originalPrompt: originalText,
+      finalPrompt: finalText,
     }),
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`OpenAI API error: ${error.error?.message || 'Unknown error'}`);
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || `API error: ${response.status}`);
   }
 
   const data = await response.json();
-  return data.data[0].embedding;
+  return {
+    originalEmbedding: data.originalEmbedding,
+    finalEmbedding: data.finalEmbedding,
+  };
 }
 
 // Calculate points awarded based on who got AI help
@@ -82,10 +78,7 @@ export async function calculateSimilarityScore(
 ): Promise<ScoringResult> {
   try {
     // Get embeddings for both prompts
-    const [originalEmbedding, finalEmbedding] = await Promise.all([
-      getEmbedding(originalPrompt),
-      getEmbedding(finalPrompt),
-    ]);
+    const { originalEmbedding, finalEmbedding } = await getEmbeddings(originalPrompt, finalPrompt);
 
     // Calculate similarity (0-1)
     const similarity = cosineSimilarity(originalEmbedding, finalEmbedding);

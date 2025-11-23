@@ -1,7 +1,4 @@
-// FAL API client for image generation
-
-const FAL_API_KEY = process.env.NEXT_PUBLIC_FAL_API_KEY;
-const FAL_MODEL = 'fal-ai/flux/schnell'; // Fast and cheap!
+// FAL API client for image generation (via server proxy)
 
 export interface GenerateImageOptions {
   prompt: string;
@@ -16,60 +13,31 @@ export interface GenerateImageResult {
 export async function generateImage(
   options: GenerateImageOptions
 ): Promise<GenerateImageResult> {
-  if (!FAL_API_KEY) {
-    throw new Error('FAL API key not configured');
-  }
-
   const { prompt, imageSize = 'square' } = options;
 
-  // Add consistent illustrated art style to all prompts
-  const styledPrompt = `${prompt}, vibrant illustrated art style, colorful digital illustration, cartoon aesthetic`;
-
-  // Image size mapping
-  const sizeMap = {
-    square: { width: 512, height: 512 },
-    portrait: { width: 512, height: 768 },
-    landscape: { width: 768, height: 512 },
-  };
-
-  const size = sizeMap[imageSize];
-
   try {
-    const response = await fetch(`https://fal.run/${FAL_MODEL}`, {
+    const response = await fetch('/api/generate-image', {
       method: 'POST',
       headers: {
-        'Authorization': `Key ${FAL_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        prompt: styledPrompt,
-        image_size: imageSize,
-        num_inference_steps: 4, // Fast mode for Schnell
-        num_images: 1,
-        enable_safety_checker: false, // We want the slop!
+        prompt,
+        imageSize,
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        `FAL API error: ${response.status} - ${errorData.detail || response.statusText}`
+        errorData.error || `API error: ${response.status}`
       );
     }
 
     const data = await response.json();
-
-    // FAL returns images array
-    if (!data.images || !data.images[0]) {
-      throw new Error('No image generated');
-    }
-
-    return {
-      imageUrl: data.images[0].url,
-      prompt,
-    };
+    return data;
   } catch (error) {
-    console.error('FAL API error:', error);
+    console.error('Image generation error:', error);
     throw error;
   }
 }

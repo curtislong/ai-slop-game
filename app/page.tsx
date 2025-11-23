@@ -10,7 +10,7 @@ import TurnTransition from '@/components/TurnTransition';
 import CelebrationCard from '@/components/CelebrationCard';
 import CorruptionAnimation from '@/components/CorruptionAnimation';
 import FlipCard from '@/components/FlipCard';
-import { generateImage, generateMockImage } from '@/lib/fal-client';
+import { generateImage } from '@/lib/fal-client';
 import { corruptPrompt, CorruptionResult } from '@/lib/corruption';
 
 export default function Home() {
@@ -76,12 +76,8 @@ export default function Home() {
       // Step 2: Generate image
       let result;
       if (!imageUrl) {
-        // Use mock for now - switch to real API when key is set
-        const useMock = !process.env.NEXT_PUBLIC_FAL_API_KEY;
-
-        result = useMock
-          ? await generateMockImage(finalPrompt)
-          : await generateImage({ prompt: finalPrompt });
+        // Always use real API (handled securely via server route)
+        result = await generateImage({ prompt: finalPrompt });
       } else {
         result = { imageUrl };
       }
@@ -121,11 +117,8 @@ export default function Home() {
       // Use corrupted prompt
       const finalPrompt = corruptionResult.corrupted;
 
-      // Generate image with corrupted prompt
-      const useMock = !process.env.NEXT_PUBLIC_FAL_API_KEY;
-      const result = useMock
-        ? await generateMockImage(finalPrompt)
-        : await generateImage({ prompt: finalPrompt });
+      // Generate image with corrupted prompt (handled securely via server route)
+      const result = await generateImage({ prompt: finalPrompt });
 
       // Wait for flip animation
       await new Promise(resolve => setTimeout(resolve, 600));
