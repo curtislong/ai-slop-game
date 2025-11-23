@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useGame } from '@/context/GameContext';
 import Image from 'next/image';
 import { calculateWordLimit, countWords, getGameMode } from '@/lib/gameModes';
+import { validateConstraint, type ValidationResult } from '@/lib/constraintValidation';
 
 interface GuessTurnProps {
   previousImage: string;
@@ -16,6 +17,7 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating, turnS
   const { gameState } = useGame();
   const [guess, setGuess] = useState('');
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [validation, setValidation] = useState<ValidationResult>({ isValid: true, violations: [] });
 
   const currentPlayer = gameState.players[gameState.currentTurnIndex];
   const turnNumber = gameState.currentTurnIndex + 1;
@@ -26,6 +28,20 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating, turnS
   const currentWordCount = countWords(guess);
   const isOverLimit = wordLimit !== Infinity && currentWordCount > wordLimit;
   const gameMode = getGameMode(gameState.settings.gameMode);
+
+  // Validate constraints in real-time
+  useEffect(() => {
+    if (guess.trim()) {
+      const result = validateConstraint(
+        guess,
+        gameState.settings.constraint,
+        gameState.forbiddenWords
+      );
+      setValidation(result);
+    } else {
+      setValidation({ isValid: true, violations: [] });
+    }
+  }, [guess, gameState.settings.constraint, gameState.forbiddenWords]);
 
 
   // Timer effect - only starts when turnStartTime is set (card flipped)
@@ -38,10 +54,6 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating, turnS
         setTimeLeft((prev) => {
           if (prev === null || prev <= 1) {
             clearInterval(interval);
-            // Auto-submit when time runs out
-            if (guess.trim() && !isOverLimit) {
-              onSubmit(guess.trim());
-            }
             return 0;
           }
           return prev - 1;
@@ -51,6 +63,13 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating, turnS
       return () => clearInterval(interval);
     }
   }, [gameState.settings.turnTimerEnabled, isGenerating, turnStartTime]);
+
+  // Auto-submit when timer hits zero
+  useEffect(() => {
+    if (timeLeft === 0 && !isGenerating && !isOverLimit) {
+      onSubmit(guess.trim());
+    }
+  }, [timeLeft]);
 
   const handleGuessChange = (newGuess: string) => {
     // If there's a word limit, enforce it
@@ -147,26 +166,58 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating, turnS
             onChange={(e) => handleGuessChange(e.target.value)}
             placeholder="Type your guess..."
             className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none resize-none text-gray-900 ${
-              currentWordCount === wordLimit && wordLimit !== Infinity
+              !validation.isValid
+                ? 'border-red-500 focus:border-red-600'
+                : currentWordCount === wordLimit && wordLimit !== Infinity
                 ? 'border-orange-500 focus:border-orange-600'
                 : 'border-gray-300 focus:border-pink-500'
             }`}
             rows={2}
             disabled={isGenerating}
           />
-          <div className="flex justify-between items-center mt-1">
-            <p className={`text-xs font-medium ${
-              currentWordCount === wordLimit && wordLimit !== Infinity
-                ? 'text-orange-600'
-                : 'text-gray-700'
-            }`}>
-              {wordLimit === Infinity
-                ? `${currentWordCount} words (no limit)`
-                : `${currentWordCount}/${wordLimit} words`}
-            </p>
-            {currentWordCount === wordLimit && wordLimit !== Infinity && (
-              <p className="text-xs text-orange-600 font-bold">
-                Word limit reached!
+          <div className="mt-1 space-y-1">
+            <div className="flex justify-between items-center">
+              <p className={`text-xs font-medium ${
+                currentWordCount === wordLimit && wordLimit !== Infinity
+                  ? 'text-orange-600'
+                  : 'text-gray-700'
+              }`}>
+                {wordLimit === Infinity
+                  ? `${currentWordCount} words (no limit)`
+                  : `${currentWordCount}/${wordLimit} words`}
+              </p>
+              {currentWordCount === wordLimit && wordLimit !== Infinity && (
+                <p className="text-xs text-orange-600 font-bold">
+                  Word limit reached!
+                </p>
+              )}
+            </div>
+
+            {/* Constraint violation feedback */}
+            {!validation.isValid && validation.message && (
+              <div className="bg-red-50 border border-red-300 rounded-lg p-2">
+                <p className="text-xs text-red-700 font-bold">
+                  ⚠️ {validation.message}
+                </p>
+                <div className="mt-1 space-y-1">
+                  {validation.violations.slice(0, 3).map((v, i) => (
+                    <p key={i} className="text-xs text-red-600">
+                      • {v.reason}
+                    </p>
+                  ))}
+                  {validation.violations.length > 3 && (
+                    <p className="text-xs text-red-500 italic">
+                      ...and {validation.violations.length - 3} more
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Constraint info */}
+            {gameState.settings.constraint !== 'none' && validation.isValid && guess.trim() && (
+              <p className="text-xs text-green-600">
+                ✓ Following {gameState.settings.constraint.replace('_', ' ')} constraint
               </p>
             )}
           </div>
@@ -175,7 +226,7 @@ export default function GuessTurn({ previousImage, onSubmit, isGenerating, turnS
         <div className="mt-auto">
           <button
             onClick={handleSubmit}
-            disabled={!guess.trim() || isGenerating}
+            disabled={!guess.trim() || isGenerating || !validation.isValid}
             className="w-full py-4 bg-gradient-to-r from-pink-600 to-orange-600 text-white rounded-xl font-black text-lg hover:from-pink-700 hover:to-orange-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all transform hover:scale-105"
           >
             {isGenerating ? 'GENERATING IMAGE...' : 'GENERATE IMAGE'}

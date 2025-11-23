@@ -48,7 +48,14 @@ export interface GameState {
   currentRound: number;
   totalRounds: number;
   completedRounds: Round[];
+  // Points tracking (for sabotage mode)
+  teamPoints: number;
+  aiPoints: number;
+  // Constraint tracking
+  forbiddenWords: string[]; // Words from Player 1's mad lib (for forbidden_words constraint)
 }
+
+export type GameConstraint = 'none' | 'one_syllable' | 'no_adjectives' | 'forbidden_words';
 
 export interface GameSettings {
   turnTimerEnabled: boolean;
@@ -57,6 +64,7 @@ export interface GameSettings {
   numberOfRounds: number;
   gameMode: string; // ID of the selected game mode
   // AI Sabotage settings (part of game mode)
-  sabotageMode: 'wholesome' | 'naughty' | 'absurd' | 'deranged';
-  allowFightBack: boolean;
+  sabotageMode: 'wholesome' | 'absurd' | 'deranged' | 'unhinged';
+  // Word constraints/variations
+  constraint: GameConstraint;
 }

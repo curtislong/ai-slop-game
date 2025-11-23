@@ -5,6 +5,7 @@ import { GameState, Player, Turn, GameSettings, Round } from '@/types/game';
 import { getRandomCard } from '@/lib/cards';
 import { createPlayer, advanceTurn } from '@/lib/gameLogic';
 import { DEFAULT_GAME_MODE } from '@/lib/gameModes';
+import { extractWords } from '@/lib/constraintValidation';
 
 interface GameContextType {
   gameState: GameState;
@@ -15,6 +16,7 @@ interface GameContextType {
   resetGame: () => void;
   updateSettings: (settings: Partial<GameSettings>) => void;
   startNextRound: () => void;
+  awardPoints: (teamPoints: number, aiPoints: number) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -26,7 +28,7 @@ const initialSettings: GameSettings = {
   numberOfRounds: 1,
   gameMode: DEFAULT_GAME_MODE,
   sabotageMode: 'absurd',
-  allowFightBack: false,
+  constraint: 'none',
 };
 
 const createInitialState = (): GameState => ({
@@ -40,6 +42,9 @@ const createInitialState = (): GameState => ({
   currentRound: 1,
   totalRounds: 1,
   completedRounds: [],
+  teamPoints: 0,
+  aiPoints: 0,
+  forbiddenWords: [],
 });
 
 export function GameProvider({ children }: { children: ReactNode }) {
@@ -75,12 +80,21 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (gameState.players.length < 2) return;
 
     const card = getRandomCard();
+
+    // Randomize AI personality for sabotage mode
+    const personalities = ['wholesome', 'absurd', 'deranged', 'unhinged'] as const;
+    const randomPersonality = personalities[Math.floor(Math.random() * personalities.length)];
+
     setGameState({
       ...gameState,
       status: 'playing',
       madLibCard: card,
       totalRounds: gameState.settings.numberOfRounds,
       currentRound: 1,
+      settings: {
+        ...gameState.settings,
+        sabotageMode: randomPersonality,
+      },
     });
   };
 
@@ -102,6 +116,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const newState = advanceTurn(gameState, turn);
+
+    // If this is Player 1's turn (mad lib), extract forbidden words
+    if (gameState.currentTurnIndex === 0 && gameState.settings.constraint === 'forbidden_words') {
+      newState.forbiddenWords = extractWords(prompt);
+    }
+
     setGameState(newState);
   };
 
@@ -120,6 +140,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     // Start new round
     const newCard = getRandomCard();
+
+    // Randomize AI personality for new round
+    const personalities = ['wholesome', 'absurd', 'deranged', 'unhinged'] as const;
+    const randomPersonality = personalities[Math.floor(Math.random() * personalities.length)];
+
     setGameState({
       ...gameState,
       status: 'playing',
@@ -128,6 +153,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
       turns: [],
       madLibCard: newCard,
       completedRounds: [...gameState.completedRounds, completedRound],
+      forbiddenWords: [], // Reset for new round
+      settings: {
+        ...gameState.settings,
+        sabotageMode: randomPersonality,
+      },
+    });
+  };
+
+  const awardPoints = (teamPoints: number, aiPoints: number) => {
+    setGameState({
+      ...gameState,
+      teamPoints: gameState.teamPoints + teamPoints,
+      aiPoints: gameState.aiPoints + aiPoints,
     });
   };
 
@@ -146,6 +184,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         resetGame,
         updateSettings,
         startNextRound,
+        awardPoints,
       }}
     >
       {children}

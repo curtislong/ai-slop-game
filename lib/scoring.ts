@@ -7,6 +7,10 @@ export interface ScoringResult {
   teamVsAI?: {
     teamWon: boolean;
     sabotageImpact: number; // How much corruption affected the result
+    pointsAwarded: {
+      team: number; // 0-3 points
+      ai: number; // 0-3 points
+    };
   };
 }
 
@@ -56,11 +60,25 @@ async function getEmbedding(text: string): Promise<number[]> {
   return data.data[0].embedding;
 }
 
+// Calculate points awarded based on who got AI help
+// Each player who got helped: -1 point (to AI)
+// Each player who didn't get helped: +1 point (to team)
+function calculatePointsFromHelp(turns: any[]): { team: number; ai: number } {
+  const helpedCount = turns.filter(turn => turn.originalPrompt && turn.corruptedPrompt).length;
+  const notHelpedCount = turns.length - helpedCount;
+
+  return {
+    team: notHelpedCount,
+    ai: helpedCount,
+  };
+}
+
 // Calculate similarity score using AI embeddings
 export async function calculateSimilarityScore(
   originalPrompt: string,
   finalPrompt: string,
-  hadSabotage: boolean = false
+  hadSabotage: boolean = false,
+  turns?: any[]
 ): Promise<ScoringResult> {
   try {
     // Get embeddings for both prompts
@@ -79,7 +97,10 @@ export async function calculateSimilarityScore(
     let grade: 'gold' | 'silver' | 'bronze' | 'none';
     let message: string;
 
-    if (hadSabotage) {
+    if (hadSabotage && turns) {
+      // Calculate points based on who got help
+      const pointsAwarded = calculatePointsFromHelp(turns);
+
       // Team vs AI messaging
       if (score >= 75) {
         grade = 'gold';
@@ -92,13 +113,14 @@ export async function calculateSimilarityScore(
         message = 'The AI put up a fight, but you survived!';
       } else {
         grade = 'none';
-        message = 'AI wins this round! Total chaos achieved!';
+        message = 'Despite AI\'s best efforts to help, total chaos ensued!';
       }
 
       // Calculate Team vs AI data
       const teamVsAI = {
         teamWon: score >= 60, // Team wins if score is 60% or higher
         sabotageImpact: 100 - score, // How much the AI corrupted things
+        pointsAwarded,
       };
 
       return { score, grade, message, teamVsAI };

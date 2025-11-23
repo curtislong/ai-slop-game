@@ -58,12 +58,19 @@ export default function Home() {
           gameState.settings.sabotageMode,
           wordLimit
         );
-        setCorruptionResult(corruption);
-        setShowCorruption(true);
 
-        // Wait for corruption animation to complete (handled by CorruptionAnimation component)
-        // This will be controlled by the onComplete callback
-        return;
+        // Only show corruption animation if AI actually changed something
+        if (corruption.corrupted !== corruption.original) {
+          setCorruptionResult(corruption);
+          setShowCorruption(true);
+
+          // Wait for corruption animation to complete (handled by CorruptionAnimation component)
+          // This will be controlled by the onComplete callback
+          return;
+        }
+
+        // If no corruption, use the original prompt
+        finalPrompt = prompt;
       }
 
       // Step 2: Generate image
@@ -101,7 +108,7 @@ export default function Home() {
     }
   };
 
-  const handleCorruptionComplete = async (fightBackText?: string) => {
+  const handleCorruptionComplete = async () => {
     setShowCorruption(false);
 
     if (!corruptionResult) return;
@@ -111,11 +118,8 @@ export default function Home() {
     setIsGenerating(true);
 
     try {
-      // Use corrupted prompt, optionally with fight back text
-      let finalPrompt = corruptionResult.corrupted;
-      if (fightBackText && fightBackText.trim()) {
-        finalPrompt = `${corruptionResult.corrupted} ${fightBackText.trim()}`;
-      }
+      // Use corrupted prompt
+      const finalPrompt = corruptionResult.corrupted;
 
       // Generate image with corrupted prompt
       const useMock = !process.env.NEXT_PUBLIC_FAL_API_KEY;
@@ -129,7 +133,7 @@ export default function Home() {
       // Prepare corruption data for storage
       const corruptionData = {
         original: corruptionResult.original,
-        corrupted: finalPrompt, // Use final prompt (includes fight back if added)
+        corrupted: finalPrompt,
       };
 
       if (isFinalTurn) {
@@ -197,8 +201,6 @@ export default function Home() {
       <CorruptionAnimation
         corruptionResult={corruptionResult}
         onComplete={handleCorruptionComplete}
-        allowFightBack={gameState.settings.allowFightBack}
-        onFightBack={handleCorruptionComplete}
       />
     );
   }

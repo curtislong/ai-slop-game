@@ -2,23 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { CorruptionResult } from '@/lib/corruption';
+import { HELPER_MESSAGES } from '@/lib/helperMessages';
 
 interface CorruptionAnimationProps {
   corruptionResult: CorruptionResult;
   onComplete: () => void;
-  allowFightBack?: boolean;
-  onFightBack?: (additionalWords: string) => void;
 }
 
 export default function CorruptionAnimation({
   corruptionResult,
-  onComplete,
-  allowFightBack = false,
-  onFightBack
+  onComplete
 }: CorruptionAnimationProps) {
-  const [stage, setStage] = useState<'intercepted' | 'showing_original' | 'corrupting' | 'showing_corrupted' | 'fight_back' | 'done'>('intercepted');
-  const [fightBackText, setFightBackText] = useState('');
-  const [fightBackTimer, setFightBackTimer] = useState(5);
+  const [stage, setStage] = useState<'intercepted' | 'showing_original' | 'corrupting' | 'showing_corrupted' | 'done'>('intercepted');
 
   useEffect(() => {
     const sequence = async () => {
@@ -26,48 +21,23 @@ export default function CorruptionAnimation({
       await sleep(1500);
       setStage('showing_original');
 
-      // Stage 2: Show original (1.5s)
-      await sleep(1500);
+      // Stage 2: Show original (3s) - give time to read
+      await sleep(3000);
       setStage('corrupting');
 
-      // Stage 3: Corruption animation (2s)
+      // Stage 3: Corruption animation (2s) - blurry animation
       await sleep(2000);
       setStage('showing_corrupted');
 
-      // Stage 4: Show corrupted result (2s)
-      await sleep(2000);
+      // Stage 4: Show corrupted result (3s) - give time to read
+      await sleep(3000);
 
-      if (allowFightBack && onFightBack) {
-        setStage('fight_back');
-        // Fight back timer will be handled separately
-      } else {
-        setStage('done');
-        onComplete();
-      }
+      setStage('done');
+      onComplete();
     };
 
     sequence();
   }, []);
-
-  // Fight back timer
-  useEffect(() => {
-    if (stage === 'fight_back' && fightBackTimer > 0) {
-      const timer = setTimeout(() => {
-        setFightBackTimer(fightBackTimer - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (stage === 'fight_back' && fightBackTimer === 0) {
-      handleFightBackSubmit();
-    }
-  }, [stage, fightBackTimer]);
-
-  const handleFightBackSubmit = () => {
-    if (onFightBack) {
-      onFightBack(fightBackText.trim());
-    }
-    setStage('done');
-    onComplete();
-  };
 
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -77,36 +47,56 @@ export default function CorruptionAnimation({
         'Enhancing your vocabulary...',
         'Selecting more professional terminology...',
         'Upgrading word choices...',
-        'Replacing with industry-standard terms...'
+        'Replacing with industry-standard terms...',
+        'Applying best practices for word selection...',
+        'Implementing advanced descriptive language...',
+        'Optimizing semantic clarity...',
+        'Elevating prose quality...'
       ],
       elaborator: [
         'Adding clarifying details...',
         'Including important context...',
         'Enriching the description...',
-        'Providing helpful specifics...'
+        'Providing helpful specifics...',
+        'Expanding for better comprehension...',
+        'Including relevant background information...',
+        'Adding precision to your description...',
+        'Incorporating essential details...'
       ],
       truncator: [
         'Completing your sentence...',
         'Finishing your thought...',
         'Adding the rest for you...',
-        'Auto-completing intelligently...'
+        'Auto-completing intelligently...',
+        'Predicting intended completion...',
+        'Filling in the implied ending...',
+        'Extending to full expression...',
+        'Smart-completing your idea...'
       ],
       homophone_rhyme: [
-        'Improving pronunciation...',
-        'Correcting phonetics...',
-        'Adjusting for clarity...',
-        'Fixing spelling variations...'
+        'Correcting spelling...',
+        'Fixing typos...',
+        'Adjusting for proper usage...',
+        'Applying grammar corrections...',
+        'Standardizing word forms...',
+        'Correcting common mistakes...',
+        'Improving word accuracy...',
+        'Refining terminology...'
       ],
       gap_filler: [
-        'Maximizing descriptiveness...',
-        'Filling in missing details...',
-        'Utilizing all available words...',
-        'Adding necessary context...'
+        'I noticed you had trouble completing your description...',
+        'Helping you finish your thought...',
+        'Completing your description for you...',
+        'Adding the words you forgot...',
+        'Filling in what you left out...',
+        'Finishing up for you...',
+        'Completing to full word count...',
+        'Adding missing details you overlooked...'
       ]
     };
 
     const strategy = corruptionResult.strategy;
-    const options = messages[strategy] || messages.synonym_chaos;
+    const options = messages[strategy] || messages.gap_filler;
     return options[Math.floor(Math.random() * options.length)];
   };
 
@@ -122,12 +112,7 @@ export default function CorruptionAnimation({
               AI ASSISTANT
             </h2>
             <p className="text-gray-600 font-medium">
-              {[
-                'I noticed your prompt could use some improvements!',
-                'Let me help optimize your description!',
-                'I can make this even better!',
-                'Detecting areas for enhancement...'
-              ][Math.floor(Math.random() * 4)]}
+              {HELPER_MESSAGES[Math.floor(Math.random() * HELPER_MESSAGES.length)]}
             </p>
           </div>
         )}
@@ -161,11 +146,20 @@ export default function CorruptionAnimation({
             <div className="text-4xl mb-4">✅</div>
             <h3 className="text-xl font-bold text-green-600 mb-4">
               {[
-                'All improved!',
-                'Optimization complete!',
-                'Enhanced successfully!',
-                'Much better now!'
-              ][Math.floor(Math.random() * 4)]}
+                'All improved!', 'Optimization complete!', 'Enhanced successfully!', 'Much better now!',
+                'Refinements applied!', 'That should do it!', 'All set!', 'Perfect!',
+                'Looking good!', 'There we go!', 'Polished and ready!', 'Improvements complete!',
+                'Done!', 'Finished!', 'All polished!', 'Ready to go!',
+                'Optimized!', 'Enhanced!', 'Refined!', 'Upgraded!',
+                'Perfected!', 'Improved!', 'Completed!', 'Finalized!',
+                'All better!', 'Fixed!', 'Sorted!', 'Good to go!',
+                'Mission accomplished!', 'Task complete!', 'Success!', 'Nailed it!',
+                'All done!', 'Ready!', 'Excellent!', 'Wonderful!',
+                'Great!', 'Fantastic!', 'Brilliant!', 'Superb!',
+                'Outstanding!', 'Stellar!', 'Top-notch!', 'First-rate!',
+                'Quality assured!', 'Professional grade!', 'Industry standard!', 'Best practices applied!',
+                'Fully optimized!', 'Maximum clarity!', 'Peak performance!', 'Fully enhanced!'
+              ][Math.floor(Math.random() * 52)]}
             </h3>
             <div className="bg-green-50 border-2 border-green-300 rounded-xl p-6">
               <p className="text-lg text-gray-900 font-medium">{corruptionResult.corrupted}</p>
@@ -175,55 +169,58 @@ export default function CorruptionAnimation({
                 'Generating image from enhanced prompt...',
                 'Processing optimized description...',
                 'Creating image with improvements...',
-                'Rendering refined prompt...'
-              ][Math.floor(Math.random() * 4)]}
+                'Rendering refined prompt...',
+                'Building your improved image...',
+                'Generating from updated description...',
+                'Processing enhanced version...',
+                'Creating image from refined prompt...',
+                'Rendering optimized results...',
+                'Generating with applied improvements...',
+                'Building image from polished prompt...',
+                'Processing your upgraded description...',
+                'Creating visual from enhanced text...',
+                'Rendering improved concept...',
+                'Generating with professional polish...',
+                'Processing refined description...',
+                'Building optimized visualization...',
+                'Creating from elevated prompt...',
+                'Rendering enhanced version...',
+                'Generating upgraded image...',
+                'Processing polished prompt...',
+                'Building refined output...',
+                'Creating with improvements...',
+                'Rendering professional result...',
+                'Generating optimized visual...',
+                'Processing perfected description...',
+                'Building enhanced creation...',
+                'Creating from refined input...',
+                'Rendering quality result...',
+                'Generating improved output...',
+                'Processing advanced prompt...',
+                'Building superior image...',
+                'Creating optimized result...',
+                'Rendering polished visual...',
+                'Generating enhanced output...',
+                'Processing refined input...',
+                'Building improved result...',
+                'Creating from optimized text...',
+                'Rendering upgraded image...',
+                'Generating refined visual...',
+                'Processing enhanced input...',
+                'Building professional output...',
+                'Creating improved visualization...',
+                'Rendering optimized creation...',
+                'Generating polished result...',
+                'Processing perfected prompt...',
+                'Building enhanced visual...',
+                'Creating refined output...',
+                'Rendering improved image...',
+                'Generating professional result...'
+              ][Math.floor(Math.random() * 50)]}
             </p>
           </div>
         )}
 
-        {/* Stage 5: Fight Back */}
-        {stage === 'fight_back' && (
-          <div className="text-center w-full">
-            <div className="text-4xl mb-4">🤔</div>
-            <h3 className="text-xl font-bold text-orange-600 mb-4">
-              Not quite right? ({fightBackTimer}s)
-            </h3>
-            <div className="bg-orange-50 border-2 border-orange-300 rounded-xl p-6 mb-4">
-              <p className="text-sm text-gray-700 mb-2">AI suggested:</p>
-              <p className="text-lg text-gray-900 font-medium mb-4">{corruptionResult.corrupted}</p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-bold text-gray-900 mb-2">
-                Add a few words to refine it:
-              </label>
-              <input
-                type="text"
-                value={fightBackText}
-                onChange={(e) => setFightBackText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleFightBackSubmit();
-                  }
-                }}
-                placeholder="additional words..."
-                className="w-full px-4 py-3 border-2 border-orange-300 rounded-xl focus:border-orange-500 focus:outline-none text-gray-900"
-                autoFocus
-              />
-            </div>
-            <button
-              onClick={handleFightBackSubmit}
-              className="px-6 py-3 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-700"
-            >
-              Continue ({fightBackTimer}s)
-            </button>
-            <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
-              <div
-                className="bg-orange-500 h-2 rounded-full transition-all duration-1000"
-                style={{ width: `${(fightBackTimer / 5) * 100}%` }}
-              />
-            </div>
-          </div>
-        )}
       </div>
 
       <style jsx>{`

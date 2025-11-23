@@ -94,57 +94,6 @@ export default function GameSetup() {
           </button>
         </div>
 
-        {/* Sabotage options (only show if sabotage mode selected) */}
-        {gameState.settings.gameMode === 'sabotage' && (
-          <>
-            <div className="mb-6">
-              <label className="block text-sm font-bold text-gray-900 mb-2">
-                AI Personality
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {(['wholesome', 'naughty', 'absurd', 'deranged'] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => updateSettings({ sabotageMode: mode })}
-                    className={`text-left p-3 rounded-lg transition-all ${
-                      gameState.settings.sabotageMode === mode
-                        ? 'bg-orange-600 text-white'
-                        : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                    }`}
-                  >
-                    <div className="font-bold capitalize">{mode}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <button
-                onClick={() => updateSettings({
-                  allowFightBack: !gameState.settings.allowFightBack
-                })}
-                className={`w-full text-left p-3 rounded-lg transition-all ${
-                  gameState.settings.allowFightBack
-                    ? 'bg-orange-600 text-white'
-                    : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                }`}
-              >
-                <div className="font-bold">
-                  {gameState.settings.allowFightBack ? 'Fight Back: ON' : 'Fight Back: OFF'}
-                </div>
-                <div className={`text-xs ${
-                  gameState.settings.allowFightBack
-                    ? 'text-orange-100'
-                    : 'text-gray-600'
-                }`}>
-                  {gameState.settings.allowFightBack
-                    ? 'Add emergency words to salvage!'
-                    : 'Accept AI help gracefully'}
-                </div>
-              </button>
-            </div>
-          </>
-        )}
 
         {/* Round selector */}
         <div className="mb-6">
@@ -165,6 +114,83 @@ export default function GameSetup() {
                 {num}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Constraint/Variation selector */}
+        <div className="mb-6">
+          <label className="block text-sm font-bold text-gray-900 mb-2">
+            Word Constraints
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => updateSettings({ constraint: 'none' })}
+              className={`text-left p-3 rounded-lg transition-all ${
+                gameState.settings.constraint === 'none'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+              }`}
+            >
+              <div className="font-bold">No Restrictions</div>
+              <div className={`text-xs ${
+                gameState.settings.constraint === 'none'
+                  ? 'text-purple-100'
+                  : 'text-gray-600'
+              }`}>
+                Standard gameplay
+              </div>
+            </button>
+            <button
+              onClick={() => updateSettings({ constraint: 'one_syllable' })}
+              className={`text-left p-3 rounded-lg transition-all ${
+                gameState.settings.constraint === 'one_syllable'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+              }`}
+            >
+              <div className="font-bold">1-Syllable Only</div>
+              <div className={`text-xs ${
+                gameState.settings.constraint === 'one_syllable'
+                  ? 'text-purple-100'
+                  : 'text-gray-600'
+              }`}>
+                cat, dog, sun, tree
+              </div>
+            </button>
+            <button
+              onClick={() => updateSettings({ constraint: 'no_adjectives' })}
+              className={`text-left p-3 rounded-lg transition-all ${
+                gameState.settings.constraint === 'no_adjectives'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+              }`}
+            >
+              <div className="font-bold">No Adjectives</div>
+              <div className={`text-xs ${
+                gameState.settings.constraint === 'no_adjectives'
+                  ? 'text-purple-100'
+                  : 'text-gray-600'
+              }`}>
+                No describing words
+              </div>
+            </button>
+            <button
+              onClick={() => updateSettings({ constraint: 'forbidden_words' })}
+              className={`text-left p-3 rounded-lg transition-all ${
+                gameState.settings.constraint === 'forbidden_words'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+              }`}
+            >
+              <div className="font-bold">Forbidden Words</div>
+              <div className={`text-xs ${
+                gameState.settings.constraint === 'forbidden_words'
+                  ? 'text-purple-100'
+                  : 'text-gray-600'
+              }`}>
+                Can't use Player 1's words
+              </div>
+            </button>
           </div>
         </div>
 

@@ -45,11 +45,6 @@ export default function MadLibTurn({ onSubmit, isGenerating, turnStartTime }: Ma
         setTimeLeft((prev) => {
           if (prev === null || prev <= 1) {
             clearInterval(interval);
-            // Auto-submit when time runs out if complete
-            if (isComplete) {
-              const prompt = parseTemplate(card.template, words);
-              onSubmit(prompt);
-            }
             return 0;
           }
           return prev - 1;
@@ -59,6 +54,14 @@ export default function MadLibTurn({ onSubmit, isGenerating, turnStartTime }: Ma
       return () => clearInterval(interval);
     }
   }, [gameState.settings.turnTimerEnabled, isGenerating, turnStartTime]);
+
+  // Auto-submit when timer hits zero
+  useEffect(() => {
+    if (timeLeft === 0 && !isGenerating) {
+      const prompt = parseTemplate(card.template, words);
+      onSubmit(prompt);
+    }
+  }, [timeLeft]);
 
   const timerColor =
     timeLeft === null ? 'text-gray-700' :

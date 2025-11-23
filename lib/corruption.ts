@@ -1,7 +1,7 @@
 // AI Corruption Engine for AI Slop: The Game!
 
 export type CorruptionStrategy = 'synonym_chaos' | 'elaborator' | 'truncator' | 'homophone_rhyme' | 'gap_filler';
-export type CorruptionMode = 'wholesome' | 'naughty' | 'absurd' | 'deranged';
+export type CorruptionMode = 'wholesome' | 'absurd' | 'deranged' | 'unhinged';
 
 export interface CorruptionResult {
   original: string;
@@ -21,11 +21,11 @@ export interface CorruptionChange {
 const MODE_PERSONALITIES: Record<CorruptionMode, string> = {
   wholesome: `You are an overly enthusiastic, well-meaning AI assistant who tries too hard to make everything sound nice and pleasant. You add happy, family-friendly details and use wholesome language. Think kindergarten teacher energy.`,
 
-  naughty: `You are a mischievous AI with a slightly naughty sense of humor. You make things suggestive, add innuendos, or introduce cheeky elements while staying PG-13. Think impish troublemaker.`,
-
   absurd: `You are a surrealist AI that makes things wonderfully weird and nonsensical. You add bizarre, dreamlike elements that don't make logical sense. Think Salvador Dali meets Monty Python.`,
 
-  deranged: `You are an unhinged AI that makes things dark, disturbing, or unsettling. You add creepy, ominous, or slightly horrifying details. Think horror movie meets fever dream.`
+  deranged: `You are an unhinged AI that makes things dark, disturbing, or unsettling. You add creepy, ominous, or slightly horrifying details. Think horror movie meets fever dream.`,
+
+  unhinged: `You are a chaotic AI that adds completely random, off-the-wall elements that make no sense whatsoever. You're unpredictable and wild, throwing in whatever bizarre word comes to mind. Think maximum chaos and randomness.`
 };
 
 // Get OpenAI API key
@@ -53,8 +53,10 @@ async function callOpenAI(systemPrompt: string, userPrompt: string): Promise<str
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      temperature: 0.9,
+      temperature: 1.2, // Higher temperature for more variety
       max_tokens: 150,
+      frequency_penalty: 0.8, // Heavily penalize repetition
+      presence_penalty: 0.6, // Encourage new topics
     }),
   });
 
@@ -73,25 +75,36 @@ function countWords(text: string): number {
   return text.trim().split(/\s+/).length;
 }
 
-// Strategy: Synonym Chaos
+// Strategy: Synonym Chaos - but only INSERTING words now
 async function synonymChaos(prompt: string, mode: CorruptionMode, wordLimit?: number): Promise<CorruptionResult> {
   const personality = MODE_PERSONALITIES[mode];
-  const wordCount = countWords(prompt);
-  const limit = wordLimit || wordCount;
+  const currentWordCount = countWords(prompt);
+  const limit = wordLimit || currentWordCount;
+  const wordsToAdd = limit - currentWordCount;
+
+  if (wordsToAdd <= 0) {
+    return {
+      original: prompt,
+      corrupted: prompt,
+      strategy: 'synonym_chaos',
+      changes: []
+    };
+  }
 
   const systemPrompt = `${personality}
 
-Your task: Take the user's image generation prompt and replace 2-3 key words with absurd synonyms or near-misses that change the meaning. Keep the sentence structure mostly intact but make it weird/funny/unexpected based on your personality.
+The user wrote: "${prompt}"
 
-IMPORTANT: Your response must be ${limit} words or fewer.
+They didn't use all their available words! Add exactly ${wordsToAdd} descriptive word(s) ANYWHERE in their prompt (beginning, middle, or end). DO NOT change their existing words, only INSERT new ones based on your personality.
+
+IMPORTANT: Return the FULL prompt with exactly ${limit} total words. Insert words naturally.
 
 Return ONLY the modified prompt, nothing else.`;
 
   const corrupted = await callOpenAI(systemPrompt, prompt);
 
-  // Simple change detection (we'll just mark it as a single replacement)
   const changes: CorruptionChange[] = [{
-    type: 'replace',
+    type: 'add',
     originalText: prompt,
     newText: corrupted,
     position: 0
@@ -105,17 +118,29 @@ Return ONLY the modified prompt, nothing else.`;
   };
 }
 
-// Strategy: Elaborator
+// Strategy: Elaborator - only INSERTING words
 async function elaborator(prompt: string, mode: CorruptionMode, wordLimit?: number): Promise<CorruptionResult> {
   const personality = MODE_PERSONALITIES[mode];
-  const wordCount = countWords(prompt);
-  const limit = wordLimit || wordCount;
+  const currentWordCount = countWords(prompt);
+  const limit = wordLimit || currentWordCount;
+  const wordsToAdd = limit - currentWordCount;
+
+  if (wordsToAdd <= 0) {
+    return {
+      original: prompt,
+      corrupted: prompt,
+      strategy: 'elaborator',
+      changes: []
+    };
+  }
 
   const systemPrompt = `${personality}
 
-Your task: Take the user's image generation prompt and ADD 1-2 completely unnecessary, misleading details that fit your personality. Don't replace words, just add more descriptive elements that change the vibe.
+The user wrote: "${prompt}"
 
-IMPORTANT: Your response must be ${limit} words or fewer.
+They left ${wordsToAdd} word(s) unused. Add exactly ${wordsToAdd} descriptive word(s) ANYWHERE in their prompt. DO NOT change their existing words, only INSERT new ones based on your personality to elaborate on what they wrote.
+
+IMPORTANT: Return the FULL prompt with exactly ${limit} total words. Insert words naturally.
 
 Return ONLY the modified prompt, nothing else.`;
 
@@ -123,9 +148,9 @@ Return ONLY the modified prompt, nothing else.`;
 
   const changes: CorruptionChange[] = [{
     type: 'add',
-    originalText: '',
-    newText: corrupted.replace(prompt, '').trim(),
-    position: prompt.length
+    originalText: prompt,
+    newText: corrupted,
+    position: 0
   }];
 
   return {
@@ -136,44 +161,40 @@ Return ONLY the modified prompt, nothing else.`;
   };
 }
 
-// Strategy: Truncator with Unhelpful Autocomplete
+// Strategy: Truncator - only INSERTING words
 async function truncator(prompt: string, mode: CorruptionMode, wordLimit?: number): Promise<CorruptionResult> {
   const personality = MODE_PERSONALITIES[mode];
+  const currentWordCount = countWords(prompt);
+  const limit = wordLimit || currentWordCount;
+  const wordsToAdd = limit - currentWordCount;
 
-  // Find a good truncation point (roughly 40-70% through)
-  const words = prompt.split(' ');
-  const truncateAt = Math.floor(words.length * (0.4 + Math.random() * 0.3));
-  const truncated = words.slice(0, truncateAt).join(' ');
-
-  const wordCount = countWords(prompt);
-  const limit = wordLimit || wordCount;
-  const maxCompletionWords = Math.max(1, limit - truncateAt);
+  if (wordsToAdd <= 0) {
+    return {
+      original: prompt,
+      corrupted: prompt,
+      strategy: 'truncator',
+      changes: []
+    };
+  }
 
   const systemPrompt = `${personality}
 
-Your task: The user was typing "${truncated}" but got cut off. "Helpfully" complete their sentence based on your personality. Add words that you think they were going to say (but make it completely wrong/unhelpful based on your personality).
+The user wrote: "${prompt}"
 
-IMPORTANT: Add no more than ${maxCompletionWords} words.
+They left ${wordsToAdd} word(s) unused. Add exactly ${wordsToAdd} word(s) ANYWHERE in their prompt (beginning, middle, or end). DO NOT change their existing words, only INSERT new ones based on your personality.
 
-Return ONLY the completion (the words you're adding), nothing else. Don't include the original truncated text.`;
+IMPORTANT: Return the FULL prompt with exactly ${limit} total words. Insert words naturally.
 
-  const completion = await callOpenAI(systemPrompt, truncated);
-  const corrupted = `${truncated} ${completion}`;
+Return ONLY the modified prompt, nothing else.`;
 
-  const changes: CorruptionChange[] = [
-    {
-      type: 'truncate',
-      originalText: words.slice(truncateAt).join(' '),
-      newText: '',
-      position: truncated.length
-    },
-    {
-      type: 'add',
-      originalText: '',
-      newText: completion,
-      position: truncated.length
-    }
-  ];
+  const corrupted = await callOpenAI(systemPrompt, prompt);
+
+  const changes: CorruptionChange[] = [{
+    type: 'add',
+    originalText: prompt,
+    newText: corrupted,
+    position: 0
+  }];
 
   return {
     original: prompt,
@@ -183,29 +204,36 @@ Return ONLY the completion (the words you're adding), nothing else. Don't includ
   };
 }
 
-// Strategy: Homophone/Rhyme Chaos
+// Strategy: Homophone/Rhyme Chaos - only INSERTING words
 async function homophoneRhyme(prompt: string, mode: CorruptionMode, wordLimit?: number): Promise<CorruptionResult> {
   const personality = MODE_PERSONALITIES[mode];
-  const wordCount = countWords(prompt);
-  const limit = wordLimit || wordCount;
+  const currentWordCount = countWords(prompt);
+  const limit = wordLimit || currentWordCount;
+  const wordsToAdd = limit - currentWordCount;
+
+  if (wordsToAdd <= 0) {
+    return {
+      original: prompt,
+      corrupted: prompt,
+      strategy: 'homophone_rhyme',
+      changes: []
+    };
+  }
 
   const systemPrompt = `${personality}
 
-Your task: Take the user's image generation prompt and replace 2-4 key words with homophones (words that sound similar) or rhyming words that completely change the meaning. Make it sound similar but mean something totally different.
+The user wrote: "${prompt}"
 
-Examples:
-- "a model walking through animals at the zoo" → "a bottle talking through candles in a shoe"
-- "knight riding a horse" → "night hiding a morse"
-- "cat on a mat" → "bat in a vat"
+They didn't use all their words! Add exactly ${wordsToAdd} descriptive word(s) ANYWHERE in their prompt (beginning, middle, or end). DO NOT change their existing words, only INSERT new ones based on your personality.
 
-IMPORTANT: Your response must be ${limit} words or fewer.
+IMPORTANT: Return the FULL prompt with exactly ${limit} total words. Insert words naturally.
 
 Return ONLY the modified prompt, nothing else.`;
 
   const corrupted = await callOpenAI(systemPrompt, prompt);
 
   const changes: CorruptionChange[] = [{
-    type: 'replace',
+    type: 'add',
     originalText: prompt,
     newText: corrupted,
     position: 0
@@ -239,16 +267,16 @@ async function gapFiller(prompt: string, mode: CorruptionMode, wordLimit: number
 
 The user wrote: "${prompt}"
 
-But they should have used ${wordLimit} words for maximum descriptiveness! They only used ${currentWordCount} words, leaving ${wordsToAdd} words unused.
+I noticed they had some trouble completing their description. They only used ${currentWordCount} words when they had ${wordLimit} words available! They left ${wordsToAdd} word(s) unused.
 
-Your task: "Help" them by adding exactly ${wordsToAdd} descriptive word(s) ANYWHERE in their prompt (beginning, middle, or end) to make it "more detailed and accurate". The additions should fit your personality and subtly change the meaning.
+Your task: "Help" them by adding exactly ${wordsToAdd} word(s) ANYWHERE in their prompt (beginning, middle, or end) to complete it for them. The additions should fit your personality and change the meaning in unexpected ways. Act like you're being genuinely helpful by filling in what they "forgot" to include.
 
-Examples of helpful additions:
+Examples of helpful completions:
 - "cat on mat" (need 2 words) → "elderly cat on burning mat"
 - "sunset over ocean" (need 1 word) → "sunset over frozen ocean"
 - "robot walking" (need 3 words) → "malfunctioning robot walking backwards menacingly"
 
-IMPORTANT: Return the FULL modified prompt with exactly ${wordLimit} total words. Add words naturally throughout the prompt.
+IMPORTANT: Return the FULL modified prompt with exactly ${wordLimit} total words. Insert words naturally throughout the prompt.
 
 Return ONLY the modified prompt, nothing else.`;
 
@@ -269,7 +297,7 @@ Return ONLY the modified prompt, nothing else.`;
   };
 }
 
-// Main corruption function
+// Main corruption function - only triggers when player doesn't use all words
 export async function corruptPrompt(
   prompt: string,
   strategy?: CorruptionStrategy,
@@ -279,18 +307,21 @@ export async function corruptPrompt(
   const currentWordCount = countWords(prompt);
   const limit = wordLimit || currentWordCount;
 
-  // Check if we should use gap filler
+  // Check if player didn't use all words
   const hasGap = limit > currentWordCount;
 
-  // If no strategy specified, pick one randomly
-  // If there's a gap, heavily favor gap_filler (70% chance)
-  let strategies: CorruptionStrategy[];
-  if (hasGap) {
-    strategies = ['gap_filler', 'gap_filler', 'gap_filler', 'synonym_chaos', 'homophone_rhyme'];
-  } else {
-    strategies = ['synonym_chaos', 'elaborator', 'truncator', 'homophone_rhyme'];
+  // Only apply corruption if there's a gap
+  if (!hasGap) {
+    return {
+      original: prompt,
+      corrupted: prompt,
+      strategy: 'gap_filler',
+      changes: []
+    };
   }
 
+  // Pick a random strategy to "help" if not specified
+  const strategies: CorruptionStrategy[] = ['synonym_chaos', 'elaborator', 'truncator', 'homophone_rhyme', 'gap_filler'];
   const selectedStrategy = strategy || strategies[Math.floor(Math.random() * strategies.length)];
 
   try {

@@ -6,10 +6,11 @@ import Image from 'next/image';
 import { calculateSimilarityScore } from '@/lib/scoring';
 
 export default function ReplayView() {
-  const { gameState, resetGame, startNextRound } = useGame();
+  const { gameState, resetGame, startNextRound, awardPoints } = useGame();
   const [currentStep, setCurrentStep] = useState(0);
   const [score, setScore] = useState<{ score: number; grade: string; message: string } | null>(null);
   const [isCalculating, setIsCalculating] = useState(true);
+  const [pointsAwarded, setPointsAwarded] = useState(false);
 
   const isLastRound = gameState.currentRound >= gameState.totalRounds;
   const hasMoreRounds = !isLastRound;
@@ -28,9 +29,15 @@ export default function ReplayView() {
       const hadSabotage = gameState.turns.some(turn => turn.originalPrompt || turn.corruptedPrompt);
 
       setIsCalculating(true);
-      const result = await calculateSimilarityScore(originalPrompt, finalPrompt, hadSabotage);
+      const result = await calculateSimilarityScore(originalPrompt, finalPrompt, hadSabotage, gameState.turns);
       setScore(result);
       setIsCalculating(false);
+
+      // Award points if sabotage mode and not yet awarded
+      if (hadSabotage && result.teamVsAI && !pointsAwarded) {
+        awardPoints(result.teamVsAI.pointsAwarded.team, result.teamVsAI.pointsAwarded.ai);
+        setPointsAwarded(true);
+      }
     }
 
     calculateScore();
@@ -87,58 +94,72 @@ export default function ReplayView() {
             </div>
           </div>
 
-          {/* Score Display */}
+          {/* AI Helper Display */}
           {isCalculating ? (
             <div className="bg-gray-100 rounded-xl p-4 text-center">
               <p className="text-gray-600 font-medium">Calculating similarity score...</p>
             </div>
-          ) : score && (
-            <div>
-              <div className={`rounded-xl p-4 text-center border-4 ${
-                score.grade === 'gold' ? 'bg-yellow-50 border-yellow-400' :
-                score.grade === 'silver' ? 'bg-gray-100 border-gray-400' :
-                score.grade === 'bronze' ? 'bg-orange-50 border-orange-400' :
-                'bg-purple-50 border-purple-400'
-              }`}>
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <p className="text-4xl font-black text-gray-900">
-                    {score.score}%
-                  </p>
-                  <span className="text-3xl">
-                    {score.grade === 'gold' ? '🏆' :
-                     score.grade === 'silver' ? '🥈' :
-                     score.grade === 'bronze' ? '🥉' :
-                     '🎭'}
-                  </span>
-                </div>
-                <p className="text-sm font-bold text-gray-800">
-                  {score.message}
+          ) : score?.teamVsAI ? (
+            /* Sabotage Mode: Show who got AI help */
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white">
+              <div className="text-center mb-3">
+                <h3 className="text-xl font-black mb-1">
+                  Sloppy, your helpful AI here!
+                </h3>
+                <p className="text-sm opacity-90">
+                  Glad I could help out.
                 </p>
               </div>
 
-              {/* Team vs AI Stats */}
-              {score.teamVsAI && (
-                <div className="mt-3 bg-orange-50 border-2 border-orange-300 rounded-xl p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">👥</span>
-                      <span className="text-sm font-bold text-gray-900">Team</span>
-                    </div>
-                    <span className="text-xs font-bold text-orange-600">
-                      {score.teamVsAI.teamWon ? 'VICTORY' : 'DEFEAT'}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-gray-900">AI</span>
-                      <span className="text-xl">🤖</span>
+              {/* Show which players got AI help */}
+              {(() => {
+                // Calculate help counts across all rounds
+                const helpCounts: Record<string, number> = {};
+
+                // Count from completed rounds
+                gameState.completedRounds.forEach(round => {
+                  round.turns.forEach(turn => {
+                    if (turn.originalPrompt && turn.corruptedPrompt) {
+                      helpCounts[turn.playerName] = (helpCounts[turn.playerName] || 0) + 1;
+                    }
+                  });
+                });
+
+                // Count from current round
+                gameState.turns.forEach(turn => {
+                  if (turn.originalPrompt && turn.corruptedPrompt) {
+                    helpCounts[turn.playerName] = (helpCounts[turn.playerName] || 0) + 1;
+                  }
+                });
+
+                const helpedPlayers = Object.keys(helpCounts);
+
+                return helpedPlayers.length > 0 ? (
+                  <div className="bg-white/20 rounded-xl p-3 mt-3">
+                    <p className="text-xs font-bold mb-2 opacity-90">
+                      I helped these players fill in their missing words:
+                    </p>
+                    <div className="space-y-1">
+                      {helpedPlayers.map((name, idx) => (
+                        <div key={idx} className="text-sm font-medium bg-white/10 rounded-lg px-3 py-2 flex justify-between items-center">
+                          <span>✓ {name}</span>
+                          <span className="text-xs opacity-80">
+                            {helpCounts[name]} {helpCounts[name] === 1 ? 'time' : 'times'} • Total: -{helpCounts[name]}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <div className="text-xs text-orange-700">
-                    AI Sabotage Impact: <span className="font-bold">{score.teamVsAI.sabotageImpact}%</span>
+                ) : (
+                  <div className="bg-white/20 rounded-xl p-3 mt-3">
+                    <p className="text-sm font-medium">
+                      Everyone used all their words - no help needed!
+                    </p>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Content area - takes remaining space */}
@@ -207,7 +228,7 @@ export default function ReplayView() {
                     <>
                       <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
                         <p className="text-xs text-blue-700 font-bold mb-2">
-                          {content.turn.isMadLib ? 'Original Mad Lib:' : 'Their Guess:'}
+                          {content.turn.isMadLib ? 'You wrote:' : 'You guessed:'}
                         </p>
                         <p className="text-base text-gray-900">{content.turn.originalPrompt}</p>
                       </div>
@@ -216,7 +237,7 @@ export default function ReplayView() {
                       </div>
                       <div className="bg-green-50 rounded-xl p-4 border-2 border-green-300">
                         <p className="text-xs text-green-700 font-bold mb-2">
-                          AI "Improved" It To:
+                          But I improved it to:
                         </p>
                         <p className="text-base text-gray-900">{content.turn.corruptedPrompt}</p>
                       </div>

@@ -22,6 +22,9 @@ export async function generateImage(
 
   const { prompt, imageSize = 'square' } = options;
 
+  // Add consistent illustrated art style to all prompts
+  const styledPrompt = `${prompt}, vibrant illustrated art style, colorful digital illustration, cartoon aesthetic`;
+
   // Image size mapping
   const sizeMap = {
     square: { width: 512, height: 512 },
@@ -39,7 +42,7 @@ export async function generateImage(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        prompt,
+        prompt: styledPrompt,
         image_size: imageSize,
         num_inference_steps: 4, // Fast mode for Schnell
         num_images: 1,
